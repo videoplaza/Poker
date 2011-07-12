@@ -13,7 +13,7 @@ public class MockBotUtil {
 		
 		if(player.getHoleCards() != null){
 			int sum = player.getHoleCards().get(0).getRank() + player.getHoleCards().get(1).getRank();
-			if(rnd.nextInt(100) < 50){
+			if(rnd.nextInt(100) < 5){
 				player.setMessage("Crazy!");
 				return player.getStackSize();
 			}

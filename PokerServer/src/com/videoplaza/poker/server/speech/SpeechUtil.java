@@ -45,8 +45,6 @@ public class SpeechUtil {
                "say", obsenity
          };
       }
-      if (true)
-         return;
       ProcessBuilder pb = new ProcessBuilder(cmd);
       try {
 
