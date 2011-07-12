@@ -1,0 +1,30 @@
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+
+
+public class Test {
+   public static void main(String[] args) throws Exception {
+      Server server = new Server(8080);
+
+      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
+      context.setContextPath("/");
+      server.setHandler(context);
+      // Server content from tmp
+      /*      ServletHolder holder = context.addServlet(org.eclipse.jetty.servlet.DefaultServlet.class, "/tmp/*");
+            holder.setInitParameter("resourceBase", "/tmp");
+            holder.setInitParameter("pathInfoOnly", "true");
+      */
+      // Serve some hello world servlets
+<<<<<<< .mine
+      context.addServlet(new ServletHolder(new HttpHandler()), "/*");
+=======
+      context.addServlet(new ServletHolder(new HelloServlet()), "/*");
+      context.addServlet(new ServletHolder(new HelloServlet("Buongiorno Mondo")), "/it/*");
+      context.addServlet(new ServletHolder(new HelloServlet("Bonjour le Monde")), "/fr/*");
+>>>>>>> .r11433
+      server.start();
+      server.join();
+
+   }
+}

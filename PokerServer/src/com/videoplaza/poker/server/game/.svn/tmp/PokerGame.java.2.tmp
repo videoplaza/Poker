@@ -1,0 +1,425 @@
+package com.videoplaza.poker.server.game;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver;
+import com.videoplaza.poker.game.model.Card;
+import com.videoplaza.poker.game.model.Deck;
+import com.videoplaza.poker.game.model.Game;
+import com.videoplaza.poker.game.model.Game.State;
+import com.videoplaza.poker.game.model.Player;
+import com.videoplaza.poker.game.model.Player.Move;
+import com.videoplaza.poker.game.util.PokerUtil;
+import com.videoplaza.poker.server.util.GameMessageUtil;
+
+public class PokerGame implements Runnable {
+
+<<<<<<< .mine
+	private void updateGameState() {
+		Player winner = null;
+		for(Player player:game.getPlayers()){
+			if(player.getStackSize() > 0){
+				if(winner == null){
+					winner = player;
+				} else {
+					return;
+				}
+			} 
+		}
+		//Lobby.getInstance().updatedCards(game, "Tournament ended, winner was " + winner);
+		game.setState(State.FINISHED);
+	}
+=======
+   private Game game;
+>>>>>>> .r11509
+
+   public PokerGame(Game game) {
+      super();
+      this.game = game;
+   }
+
+   public void run() {
+      System.out.println("Starting new game");
+      int deal = 0;
+      while (game.getState() == Game.State.PLAYING) {
+         System.out.println("Tournament " + game.getId() + " deal " + ++deal);
+         doRound(deal);
+         updateGameState();
+      }
+   }
+
+   private void applyBet(Player player, int bet) {
+      player.increaseCurrentBet(bet);
+      player.decreaseStackSize(bet);
+      player.setLastBet(bet);
+      game.setHighestBet(Math.max(game.getHighestBet(), player.getCurrentBet()));
+      game.increasePotSize(bet);
+      int raiseAmount = player.getCurrentBet() - game.getHighestBet();
+      if (raiseAmount > 0) {
+         game.setMinimumRaise(bet);
+      }
+   }
+
+   private boolean checkIfFinished() {
+      Player winner = null;
+      for (Player player : game.getPlayers()) {
+         if (player.isIn()) {
+            if (winner == null) {
+               winner = player;
+            } else {
+               return false;
+            }
+         }
+      }
+      System.out.print(winner + " won " + game.getPotSize() + " chips.");
+      winner.increaseStackSize(game.getPotSize());
+      return true;
+   }
+
+   private boolean checkRoundActive() {
+      int nbActive = 0;
+      for (Player player : game.getPlayers()) {
+         if (player.getLastMove() == Move.RAISE || player.getLastMove() == Move.RAISE_ALL_IN || player.getLastMove() == Move.BIG_BLIND
+               || player.getLastMove() == Move.SMALL_BLIND || player.getLastMove() == Move.WAITING) {
+            nbActive++;
+         }
+      }
+      return nbActive > 1;
+   }
+
+   private void determineWinner() {
+      List<Player> winners = PokerUtil.getWinningPlayers(game.getPlayers(), game.getCards());
+      int winning = game.getPotSize() / winners.size();
+      for (Player winner : winners) {
+         System.out.print(winner + " won " + winning + " chips.");
+         winner.increaseStackSize(winning);
+      }
+   }
+
+   private boolean doBettingRound(int currentPlayerIndex, int round) {
+      if (round == 1) {
+         // reset player states
+         for (Player player : game.getPlayers()) {
+            player.setCurrentBet(0);
+            if (player.getLastMove() == Move.RAISE_ALL_IN) {
+               player.setLastMove(Move.ALL_IN);
+            }
+            if (player.getLastMove() != Move.ALL_IN && player.getLastMove() != Move.OUT && player.getLastMove() != Move.FOLD) {
+               // player is active
+               player.setLastMove(Move.WAITING);
+            }
+         }
+      } else {
+         // reset player states
+         for (Player player : game.getPlayers()) {
+            player.setCurrentBet(0);
+            if (player.getLastMove() == Move.RAISE_ALL_IN) {
+               player.setLastMove(Move.ALL_IN);
+            }
+            if (player.getLastMove() != Move.ALL_IN && player.getLastMove() != Move.OUT && player.getLastMove() != Move.FOLD) {
+               // player is active
+               player.setLastMove(Move.WAITING);
+            }
+         }
+      }
+
+      // do round
+      Player previousPlayer = null;
+      while (checkRoundActive()) {
+         Player currentPlayer = game.getPlayers().get(currentPlayerIndex);
+         Lobby.getInstance().displayPlayerMove(game, previousPlayer, currentPlayer);
+         if (currentPlayer.isIn()) {
+            getPlayerBet(currentPlayer);
+         }
+         currentPlayerIndex = (currentPlayerIndex + 1) % game.getPlayers().size();
+         previousPlayer = currentPlayer;
+      }
+
+      return checkIfFinished();
+   }
+
+   private void doRound(int deal) {
+      game.setCards(new ArrayList<Card>());
+      game.setHighestBet(0);
+      game.setMinimumRaise(game.getBigBlind());
+      game.setPotSize(0);
+      game.setTimeToBet(true);
+      game.setDealer(resolveDealer());
+      int currentPlayerIndex = (game.getDealer() + 3) % game.getPlayers().size();
+      System.out.println("Shuffling cards");
+      System.out.println("Dealing hole cards");
+      Deck deck = new Deck();
+      deck.shuffle();
+      for (Player player : game.getPlayers()) {
+         player.setCurrentBet(0);
+         player.setMessage("");
+         if (player.getStackSize() <= 0) {
+            player.setLastMove(Move.OUT);
+            player.setIn(false);
+            player.setHoleCards(new ArrayList<Card>());
+            continue;
+         }
+         player.setLastMove(Move.WAITING);
+         player.setIn(true);
+         List<Card> holeCards = new ArrayList<Card>();
+         holeCards.add(deck.deal());
+         holeCards.add(deck.deal());
+         player.setHoleCards(holeCards);
+      }
+      payBlinds();
+      int round = 0;
+      if (doBettingRound(currentPlayerIndex, ++round))
+         return;
+
+      // toss a card
+      deck.deal();
+
+      // flop
+      for (int i = 0; i < 3; i++) {
+         game.getCards().add(deck.deal());
+      }
+      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+         return;
+
+      // toss a card
+      deck.deal();
+
+      // turn
+      game.getCards().add(deck.deal());
+      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+         return;
+
+      // toss a card
+      deck.deal();
+
+      // river
+      game.getCards().add(deck.deal());
+      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+         return;
+
+      game.setTimeToBet(false);
+
+      // TODO: split pot correctly considering all-in players
+      determineWinner();
+   }
+
+   private int getActualBet(int wantedBet, Player player) {
+
+      // always cap bet between 0 and players stack size
+      wantedBet = Math.min(player.getStackSize(), wantedBet);
+      wantedBet = Math.max(0, wantedBet);
+
+      int neededToCall = game.getHighestBet() - player.getCurrentBet();
+
+      if (wantedBet > 0 && wantedBet == player.getStackSize()) {
+         // all-in bet
+         if (wantedBet > neededToCall) {
+            player.setLastMove(Player.Move.RAISE_ALL_IN);
+         } else {
+            player.setLastMove(Player.Move.ALL_IN);
+         }
+         return wantedBet;
+      }
+
+      // not allowed to bet less than call minimum 
+      if (wantedBet < neededToCall) {
+         // fold
+         player.setIn(false);
+         player.setLastMove(Player.Move.FOLD);
+         return 0;
+      } else if (wantedBet == neededToCall) {
+         // call
+         player.setLastMove(Player.Move.CALL);
+         return wantedBet;
+      } else {
+         // raise
+         int raise = wantedBet - neededToCall;
+         if (raise < game.getMinimumRaise()) {
+            player.setLastMove(Player.Move.CALL);
+            return neededToCall;
+         }
+         // raise is bigger that minimum raise 
+         player.setLastMove(Player.Move.RAISE);
+         return wantedBet;
+      }
+   }
+
+   private int getBet(Player player) {
+      if (player.isMockBot()) {
+         return MockBotUtil.getMockMove(game, player);
+      }
+
+      int playerBet = 0;
+      String playerChatMessage = null;
+      long startTimer = System.currentTimeMillis();
+      try {
+         // connect to bot
+         URL botUrl = new URL(player.getBotUrl());
+         HttpURLConnection connection = (HttpURLConnection) botUrl.openConnection();
+         connection.setRequestMethod("POST");
+         connection.setDoOutput(true);
+
+         // serialize game state
+         XStream xstream = new XStream(new JettisonMappedXmlDriver());
+         StringWriter jsonWriter = new StringWriter();
+         xstream.toXML(GameMessageUtil.applyPlayerPerpective(game, player), jsonWriter);
+         String data = URLEncoder.encode("game", "UTF-8") + "=" + URLEncoder.encode(jsonWriter.getBuffer().toString(), "UTF-8");
+
+         // send state to bot
+         OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
+         data = data + "\r\n\r\n";
+         writer.write(data);
+         writer.flush();
+         connection.setConnectTimeout(5000);
+         connection.setReadTimeout(20000);
+
+         // read bots response
+         BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+         StringBuilder response = new StringBuilder();
+         String inputLine;
+         while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+         }
+         in.close();
+
+         // parse bots response
+         String responseString = response.toString();
+         System.out.println("Response from player " + player + ": " + responseString);
+         responseString = responseString.trim();
+         int firstSpaceIndex = responseString.indexOf(" ");
+         if (firstSpaceIndex > 0) {
+            try {
+               playerBet = Integer.parseInt(responseString.substring(0, firstSpaceIndex));
+            } catch (NumberFormatException e) {
+               System.out.println("Invalid bet response format for player " + player + ": " + responseString.substring(0, firstSpaceIndex));
+            }
+            playerChatMessage = responseString.substring(firstSpaceIndex + 1);
+         } else {
+            try {
+               playerBet = Integer.parseInt(responseString);
+            } catch (NumberFormatException e) {
+               System.out.println("Invalid bet response format for player " + player + ": " + responseString.substring(0, firstSpaceIndex));
+            }
+
+         }
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+      long timer = System.currentTimeMillis() - startTimer;
+      System.out.println("Player " + player + " responded in " + timer + " ms.");
+      long toWait = game.getBetPauseLength() - timer;
+      if (toWait > 0) {
+         try {
+            Thread.sleep(toWait);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         }
+      }
+      if (playerChatMessage != null && playerChatMessage.length() > 0) {
+         player.setMessage(playerChatMessage);
+      } else {
+         player.setMessage("");
+      }
+      return playerBet;
+   }
+
+   private Player getNextActivePlayer(int index) {
+      int nextActiveIndex = index % game.getPlayers().size();
+      Player nextActive = game.getPlayers().get(nextActiveIndex);
+      while (!nextActive.isIn()) {
+         nextActiveIndex = ++index % game.getPlayers().size();
+         nextActive = game.getPlayers().get(nextActiveIndex);
+      }
+      return nextActive;
+   }
+
+   private void getPlayerBet(Player player) {
+      int wantedBet = getBet(player);
+      int actualBet = getActualBet(wantedBet, player);
+      applyBet(player, actualBet);
+   }
+
+   private void payBlinds() {
+      Player smallBlind = getNextActivePlayer(game.getDealer() + 1);
+      int smallBlindAmount = game.getSmallBlind();
+      if (smallBlindAmount > smallBlind.getStackSize()) {
+         smallBlindAmount = smallBlind.getStackSize();
+         smallBlind.setLastMove(Move.RAISE_ALL_IN);
+      }
+      smallBlind.decreaseStackSize(smallBlindAmount);
+      smallBlind.setLastBet(smallBlindAmount);
+      game.increasePotSize(smallBlindAmount);
+      smallBlind.setCurrentBet(smallBlindAmount);
+      Player bigBlind = getNextActivePlayer(smallBlind.getPosition() + 1);
+      int bigBlindAmount = game.getBigBlind();
+      if (bigBlindAmount > bigBlind.getStackSize()) {
+         bigBlindAmount = bigBlind.getStackSize();
+         if (bigBlindAmount > smallBlindAmount) {
+            smallBlind.setLastMove(Move.RAISE_ALL_IN);
+         } else {
+            smallBlind.setLastMove(Move.ALL_IN);
+         }
+      }
+      bigBlind.decreaseStackSize(bigBlindAmount);
+      bigBlind.setCurrentBet(bigBlindAmount);
+      game.increasePotSize(bigBlindAmount);
+      game.setHighestBet(Math.max(smallBlindAmount, bigBlindAmount));
+
+   }
+
+   private int resolveDealer() {
+      int dealerIndex = (game.getDealer() + 1) % game.getPlayers().size();
+      Player dealer = game.getPlayers().get(dealerIndex);
+      while (dealer.getStackSize() == 0) {
+         dealer = game.getPlayers().get(dealerIndex);
+         dealerIndex = (dealerIndex + 1) % game.getPlayers().size();
+      }
+      return dealerIndex;
+   }
+
+   private void updateGameState() {
+      Player winner = null;
+      for (Player player : game.getPlayers()) {
+         if (player.getStackSize() > 0) {
+            if (winner == null) {
+               winner = player;
+            } else {
+               return;
+            }
+         }
+      }
+      System.out.println("Tournament " + game.getId() + "ended, winner was " + winner);
+      game.setState(State.FINISHED);
+   }
+
+   public static void main(String[] args) {
+      int playerBet = 0;
+      String playerChatMessage = null;
+      StringBuilder response = new StringBuilder(" 2s3 hej csd     ");
+      String responseString = response.toString();
+      responseString = responseString.trim();
+      int firstSpaceIndex = responseString.indexOf(" ");
+      if (firstSpaceIndex > 0) {
+         try {
+            playerBet = Integer.parseInt(responseString.substring(0, firstSpaceIndex));
+         } catch (NumberFormatException e) {
+            System.out.print("Invalid bet response for player : " + responseString.substring(0, firstSpaceIndex));
+         }
+         playerChatMessage = responseString.substring(firstSpaceIndex + 1);
+      } else {
+         playerBet = Integer.parseInt(responseString);
+      }
+      System.out.println("bet: " + playerBet);
+      System.out.println("msg: " + playerChatMessage);
+   }
+
+}

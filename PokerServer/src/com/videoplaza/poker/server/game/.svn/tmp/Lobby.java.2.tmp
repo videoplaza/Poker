@@ -1,0 +1,189 @@
+package com.videoplaza.poker.server.game;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.videoplaza.poker.game.model.Game;
+import com.videoplaza.poker.game.model.Game.State;
+import com.videoplaza.poker.game.model.Player;
+import com.videoplaza.poker.game.model.Player.Move;
+import com.videoplaza.poker.server.speech.SpeechUtil;
+
+public class Lobby {
+
+   private static final int MAX_PLAYERS_PER_TABLE = 10;
+
+   private List<Game> games;
+   private volatile Game display;
+   private static int counter = 0;
+
+   private static Lobby instance = new Lobby();
+
+   private Lobby() {
+      // do nothing
+   }
+
+   public synchronized void addMockBot() {
+      playerConnect("", "MockBot " + counter++, "None", "", true);
+   }
+
+   public synchronized void addMockBot(String name) {
+      playerConnect("", "MockBot " + counter++, "None", "", true);
+   }
+
+   public Game getDisplay() {
+      return display;
+   }
+
+   public List<Game> getGames() {
+      return games;
+   }
+
+   public synchronized void playerConnect(String botUrl, String name, String author, String pictureUrl) {
+      playerConnect(botUrl, name, author, pictureUrl, false);
+   }
+
+   public synchronized void playerConnect(String botUrl, String name, String author, String pictureUrl, boolean isMockBot) {
+
+      // create a player
+      Player player = new Player();
+      player.setAuthor(author);
+      player.setName(name);
+      player.setPictureUrl(pictureUrl);
+      player.setBotUrl(botUrl);
+      player.setMockBot(isMockBot);
+
+      if (getGames() == null) {
+         games = new ArrayList<Game>();
+      }
+
+      // check if there is room for this player on existing table
+      boolean playerAdded = false;
+      for (Game game : getGames()) {
+         if (game.getState() != Game.State.WAITING)
+            continue;
+         if (game.getPlayers().size() < MAX_PLAYERS_PER_TABLE) {
+            // ok to add player
+            int position = game.getPlayers().size();
+            player.setPosition(position);
+            game.getPlayers().add(player);
+            playerAdded = true;
+            System.out.println("Player " + player + " connected to existing table " + game.getId());
+         }
+      }
+      if (!playerAdded) {
+         // need to create a new table
+         Game game = new Game();
+         game.setState(State.WAITING);
+         game.setBetPauseLength(2000);
+         game.setEndPauseLength(10000);
+         game.setSmallBlind(20);
+         game.setBigBlind(40);
+         player.setPosition(0);
+         game.getPlayers().add(player);
+         getGames().add(game);
+         System.out.println("Player " + player + " connected to new table " + game.getId());
+      }
+   }
+
+   public void setBlinds(String tableId, int smallBlind) {
+      for (Game game : games) {
+         if (game.getId().equals(tableId)) {
+            // found game, set blinds
+            int bigBlind = smallBlind * 2;
+            System.out.println("Setting blinds for table " + tableId + " to " + smallBlind + "/" + bigBlind);
+            game.setSmallBlind(smallBlind);
+            game.setBigBlind(bigBlind);
+            return;
+         }
+      }
+      System.out.println("No table with id " + tableId);
+   }
+
+   public void setPauseLengths(String tableId, int break1, int break2) {
+      // set pause lengths
+      for (Game game : games) {
+         if (game.getId().equals(tableId)) {
+            // found game, set blinds
+            System.out.println("Setting pause lengths for table " + tableId + " to " + break1 + "/" + break2);
+            game.setBetPauseLength(break1);
+            game.setEndPauseLength(break2);
+            return;
+         }
+      }
+      System.out.println("No table with id " + tableId);
+   }
+
+   public void startGame(String tableId, int startStack) {
+      for (Game game : games) {
+         if (game.getId().equals(tableId)) {
+            for (Player player : game.getPlayers()) {
+               player.setStackSize(startStack);
+            }
+            // found game, spawn game thread
+            PokerGame gameRunnable = new PokerGame(game);
+            Thread gameThread = new Thread(gameRunnable);
+            System.out.println("Spawning new game thread with " + game.getPlayers().size());
+            game.setState(Game.State.PLAYING);
+            gameThread.run();
+            System.out.println("... and not blocking servlet worker thread");
+            return;
+         }
+      }
+      System.out.println("No table with id " + tableId);
+   }
+
+   public void startPracticeGame(String gameId) {
+	  if (getGames() == null) {
+		  games = new ArrayList<Game>();
+	  }
+	  if(games.size() == 0){
+		  Game game = new Game();
+		  game.setState(State.WAITING);
+		  game.setBetPauseLength(2000);
+		  game.setEndPauseLength(10000);
+		  game.setSmallBlind(20);
+		  game.setBigBlind(40);
+		  getGames().add(game);
+	  }
+	  Game game = games.get(0);
+	  while(game.getPlayers().size() < MAX_PLAYERS_PER_TABLE){
+		  addMockBot();
+	  }
+	  startGame(game.getId(), 10000);
+   }
+
+   public void updateDisplay(Game state, Player previousPlayer, Player nextPlayer) {
+      Game g = new Game(state);
+      display = g;
+
+      if (previousPlayer != null) {
+         SpeechUtil.Voice playerVoice = SpeechUtil.Voice.values()[previousPlayer.getPosition() + 1];
+         g.setPreviousPlayer(previousPlayer.getPosition());
+
+         StringBuilder message = new StringBuilder(previousPlayer.getName());
+         Move move = previousPlayer.getLastMove();
+         message.append(": ");
+         message.append(move);
+         message.append(". ");
+         if (move == Move.RAISE || move == Move.ALL_IN) {
+            message.append(" ");
+            message.append(previousPlayer.getLastBet());
+         }
+         message.append(" ");
+         message.append(previousPlayer.getMessage());
+         SpeechUtil.say(message.toString(), playerVoice);
+         System.out.println(message.toString());
+      }
+
+      if (nextPlayer != null) {
+         g.setNextPlayer(nextPlayer.getPosition());
+      }
+
+   }
+
+   public static Lobby getInstance() {
+      return instance;
+   }
+
+}

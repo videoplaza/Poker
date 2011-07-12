@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/vp/!svn/ver/11979/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model
+END
+Suit.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/vp/!svn/ver/11426/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/Suit.java
+END
+Deck.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/vp/!svn/ver/11429/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/Deck.java
+END
+Card.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/vp/!svn/ver/11429/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/Card.java
+END
+Game.java
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/vp/!svn/ver/11539/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/Game.java
+END
+HandType.java
+K 25
+svn:wc:ra_dav:version-url
+V 105
+/svn/vp/!svn/ver/11426/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/HandType.java
+END
+Player.java
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/vp/!svn/ver/11979/com.videoplaza.poker/PokerServer/src/com/videoplaza/poker/game/model/Player.java
+END

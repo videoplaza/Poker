@@ -1,0 +1,149 @@
+package com.videoplaza.poker.game.model;
+
+import java.util.List;
+
+public class Player {
+<<<<<<< .mine
+	private int position;
+	private String name;
+	private String author;
+	private String pictureUrl;
+	
+	private int stackSize;
+	private int currentBet;
+	
+	private boolean isIn;
+	
+	private boolean allIn;
+	
+	private String botUrl;
+	
+	private List<Card> holeCards;
+=======
+   private int position;
+   private String name;
+   private String author;
+   private String pictureUrl;
+>>>>>>> .r11438
+
+   private int stackSize;
+   private int currentBet;
+
+   private boolean isIn;
+
+   private List<Card> holeCards;
+
+   private String message;
+
+   public String getAuthor() {
+      return author;
+   }
+
+   public int getCurrentBet() {
+      return currentBet;
+   }
+
+   public List<Card> getHoleCards() {
+      return holeCards;
+   }
+
+   public String getMessage() {
+      return message;
+   }
+
+   public String getName() {
+      return name;
+   }
+
+   public String getPictureUrl() {
+      return pictureUrl;
+   }
+
+   public int getPosition() {
+      return position;
+   }
+
+   public int getStackSize() {
+      return stackSize;
+   }
+
+   public boolean isIn() {
+      return isIn;
+   }
+
+   public void setAuthor(String author) {
+      this.author = author;
+   }
+
+   public void setCurrentBet(int currentBet) {
+      this.currentBet = currentBet;
+   }
+
+<<<<<<< .mine
+	public void setHoleCards(List<Card> holeCards) {
+		this.holeCards = holeCards;
+	}
+	
+	@Override
+	public String toString() {
+		return name + ": " + stackSize;
+	}
+
+	public void setBotUrl(String botUrl) {
+		this.botUrl = botUrl;
+	}
+
+	public String getBotUrl() {
+		return botUrl;
+	}
+
+	public void increaseStackSize(int amount) {
+		stackSize += amount; 
+	}
+
+	public void setAllIn(boolean allIn) {
+		this.allIn = allIn;
+	}
+	
+=======
+   public void setHoleCards(List<Card> holeCards) {
+      this.holeCards = holeCards;
+   }
+
+   public void setIn(boolean isIn) {
+      this.isIn = isIn;
+   }
+
+   public void setMessage(String message) {
+      this.message = message;
+   }
+
+   public void setName(String name) {
+      this.name = name;
+   }
+
+   public void setPictureUrl(String pictureUrl) {
+      this.pictureUrl = pictureUrl;
+   }
+
+   public void setPosition(int position) {
+      this.position = position;
+   }
+
+   public void setStackSize(int stackSize) {
+      this.stackSize = stackSize;
+   }
+
+   @Override
+   public String toString() {
+      return name + ": " + stackSize;
+   }
+
+>>>>>>> .r11438
+	public boolean isAllIn() {
+		return allIn;
+	}
+	
+	
+	
+}

@@ -1,0 +1,139 @@
+package com.videoplaza.poker.server.servlets;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.List;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.videoplaza.poker.game.model.Game;
+import com.videoplaza.poker.server.game.Lobby;
+
+public class PokerServlet extends HttpServlet {
+
+   private static final long serialVersionUID = -6019342196845493749L;
+   private static final String PARAM_ACTION = "action";
+   private static final String PARAM_TABLE = "table";
+   private static final String PARAM_BOT_URL = "bot_url";
+   private static final String PARAM_SMALL_BLIND = "small_blind";
+   private static final String PARAM_DEAL_PAUSE = "deal_pause";
+   private static final String PARAM_END_PAUSE = "end_pause";
+   private static final String PARAM_RESTORE_FILE = "file";
+   private static final String PARAM_TABLE_FILE = "table_file";
+
+   private PrintWriter w;
+
+   private void beginForm() {
+      w.println("<form style=\"border:1px solid black;padding:20px;\">");
+   };
+
+   @Override
+   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+      handle(req, resp);
+   };
+
+   @Override
+   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+      handle(req, resp);
+   }
+
+   private void endForm(String action) {
+      w.println("<input type=\"submit\" name=\"action\" value=\"" + action + "\"></form>");
+   }
+
+   private int getIntParamWithNullCheck(String param, HttpServletRequest request) {
+      return Integer.parseInt(request.getParameter(param));
+   }
+
+   private String getParamWithNullCheck(String param, HttpServletRequest request) throws Exception {
+      String result = request.getParameter(param);
+      if (result == null)
+         throw new Exception("Parameter may not be null");
+      return result;
+   }
+
+   public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+      try {
+         boolean success = true;
+         String action = request.getParameter(PARAM_ACTION);
+         if (action != null) {
+            StringBuilder responseMessage = new StringBuilder();
+            if (action.equalsIgnoreCase("add_player")) {
+               success = Lobby.getInstance().playerConnect(getParamWithNullCheck(PARAM_BOT_URL, request));
+            } else if (action.equalsIgnoreCase("load_conf")) {
+               Lobby.getInstance().loadConfig(getParamWithNullCheck(PARAM_TABLE_FILE, request));
+            } else if (action.equalsIgnoreCase("start_game")) {
+               Lobby.getInstance().startGame(getParamWithNullCheck(PARAM_TABLE, request), 1000);
+            } else if (action.equalsIgnoreCase("add_mock")) {
+               Lobby.getInstance().addMockBot();
+            } else if (action.equalsIgnoreCase("start_practice")) {
+               Lobby.getInstance().startPracticeGame(getParamWithNullCheck(PARAM_TABLE, request));
+            } else if (action.equalsIgnoreCase("set_blind")) {
+               // set blinds
+               Lobby.getInstance().setBlinds(getParamWithNullCheck(PARAM_TABLE, request), getIntParamWithNullCheck(PARAM_SMALL_BLIND, request));
+            } else if (action.equalsIgnoreCase("set_pause_lengths")) {
+               // set pause lengths
+               Lobby.getInstance().setPauseLengths(getParamWithNullCheck(PARAM_TABLE, request), getIntParamWithNullCheck(PARAM_DEAL_PAUSE, request),
+                     getIntParamWithNullCheck(PARAM_END_PAUSE, request));
+            } else if (action.equalsIgnoreCase("get_tables")) {
+               // return tables
+               List<Game> games = Lobby.getInstance().getGames();
+               responseMessage.append("<h1>Tables</h1><br>");
+               for (Game game : games) {
+                  responseMessage.append(game.toString());
+                  responseMessage.append("<br>");
+               }
+            } else if (action.equalsIgnoreCase("restore")) {
+               Lobby.getInstance().restoreFromFile(getParamWithNullCheck(PARAM_RESTORE_FILE, request));
+            }
+         }
+         // write success to response
+         response.setContentType("text/html;charset=utf-8");
+
+         response.setStatus(HttpServletResponse.SC_OK);
+         if (success)
+            response.getWriter().println("Success.");
+         else
+            response.getWriter().println("<span style=\"color:red;\"><b>Fail.</b></span><br>");
+         w = response.getWriter();
+         beginForm();
+         inputBox(PARAM_BOT_URL);
+         endForm("add_player");
+         beginForm();
+         inputBox(PARAM_TABLE);
+         endForm("start_game");
+         beginForm();
+         inputBox(PARAM_TABLE);
+         endForm("start_practice");
+         beginForm();
+         inputBox(PARAM_TABLE);
+         inputBox(PARAM_SMALL_BLIND);
+         endForm("set_blind");
+         beginForm();
+         inputBox(PARAM_TABLE);
+         inputBox(PARAM_DEAL_PAUSE);
+         inputBox(PARAM_END_PAUSE);
+         endForm("set_pause_lengths");
+         beginForm();
+         inputBox(PARAM_RESTORE_FILE);
+         endForm("restore");
+         beginForm();
+         inputBox(PARAM_TABLE_FILE);
+         endForm("load_conf");
+         w.println("<a href=/files/index.htm>Show running games</a>");
+
+      } catch (Exception e) {
+         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+         response.getWriter().println("Bad request.");
+         e.printStackTrace();
+
+      }
+   }
+
+   private void inputBox(String name) {
+      w.println(name + ":<br><input name=\"" + name + "\"><br>");
+   }
+}

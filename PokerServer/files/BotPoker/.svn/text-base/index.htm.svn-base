@@ -1,0 +1,477 @@
+
+<html>
+    <head>
+        <title>VP BoT pOkEr</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+        <script type="text/javascript" src="jquery-1.5.1.js"></script>
+        <script type="text/javascript" src="jquery-ui-1.8.10.custom.min.js"></script>
+        <script type="text/javascript">
+            //
+
+var DEBUG = false;
+var previousPreviousPlayer = null;
+var previousDealer = null;
+            
+var staticJson = function () {
+var json = {
+   "com.videoplaza.poker.game.model.Game":{
+      "players":{
+         "com.videoplaza.poker.game.model.Player":[
+            {
+               "position":0,
+               "name":"The JUnit",
+               "author":"Jakob",
+               "stackSize":1000000,
+               "currentBet":1000,
+               "isIn":true,
+               "holeCards":{
+                  "@class":"java.util.Arrays$ArrayList",
+                  "a":{
+                     "@class":"com.videoplaza.poker.game.model.Card-array",
+                     "com.videoplaza.poker.game.model.Card":[
+                        {
+                           "suit":"SPADES",
+                           "rank":2
+                        },
+                        {
+                           "suit":"SPADES",
+                           "rank":14
+                        }
+                     ]
+                  }
+               }
+            },
+            {
+               "position":1,
+               "name":"Muminpappan",
+               "author":"Jesper",
+               "stackSize":1000000,
+               "currentBet":1000,
+               "isIn":true,
+               "holeCards":{
+                  "@class":"java.util.Arrays$ArrayList",
+                  "a":{
+                     "@class":"com.videoplaza.poker.game.model.Card-array",
+                     "com.videoplaza.poker.game.model.Card":[
+                        {
+                           "suit":"HEARTS",
+                           "rank":10
+                        },
+                        {
+                           "suit":"HEARTS",
+                           "rank":11
+                        }
+                     ]
+                  }
+               }
+            }
+         ]
+      },
+      "dealer":0,
+      "cards":{
+         "com.videoplaza.poker.game.model.Card":[
+            {
+               "suit":"SPADES",
+               "rank":2
+            },
+            {
+               "suit":"SPADES",
+               "rank":3
+            },
+            {
+               "suit":"SPADES",
+               "rank":4
+            }
+         ]
+      },
+      "potSize":1000,
+      "bigBlind":40,
+      "smallBlind":20,
+      "highestBet":1000,
+      "minimumRaise":960,
+      "isTimeToBet":true
+   }
+}
+}
+
+var bigIfChanged = function(element, data, sizeChange){
+    if ($(element).html()!= data){
+
+            $(element).animate({
+                fontSize: "+="+sizeChange
+                }, 300, function() {
+                     $(this).animate({fontSize: "-="+sizeChange}, 300);
+                });
+    }
+    $(element).html(data);
+}
+
+updateDisplay = function(){
+    console.log("updateDisplay()");
+
+
+
+    // fix game variables
+
+    //$("#potSize").html(game.potSize);
+     bigIfChanged($("#potSize"), game.potSize, 20);
+
+    $("#bigBlind").html(game.bigBlind);
+    $("#smallBlind").html(game.smallBlind);
+    $("#highestBet").html(game.highestBet);
+    $("#minimumRaise").html(game.minimumRaise);
+    $("#isTimeToBet").html(game.isTimeToBet);
+
+   //TO-do cards on table. kolla om det funkar
+    if (game.cards != undefined){
+        $.each($("img.card", "div#table-panel"), function(i){
+            var img = "";
+            if (game.cards.length -1 >= i){
+                card = game.cards[i];
+                var img = ( card.suit == "SPADES" ? "s":
+                            card.suit == "HEARTS" ? "h":
+                            card.suit == "DIAMONDS" ? "d":
+                            card.suit == "CLUBS" ? "c":"") + card.rank + ".png";
+                $(this).attr("src","img/cards/"+img);
+            }else{
+                $(this).attr("src","img/cards/back.png");
+            }
+        });
+    } else {
+    	$.each($("img.card", "div#table-panel"), function(i){
+	        $(this).attr("src","img/cards/back.png");
+        });
+    }
+
+    // fix players variables
+    var tableWidth = 1024;
+    $("ul#players li").hide();
+    $("ul#players li").each(function(position){
+        if (position < game.players.length ){
+            // get player
+            var player = game.players[position];
+
+            // position player seat element
+            if (position < 5 ){
+                $(this).css({"left": (position)* tableWidth/5 +  "px", "top":"0px"});
+            }
+            else{
+                $(this).css({"right": (position-5)*tableWidth/5 + "px", "bottom":"0px"});
+            }
+
+            //show seat
+            $(this).show();
+
+            $(".name", this).html(player.name);
+            $(".author", this).html(player.author);
+            $(".picture", this).attr("src", player.hasOwnProperty("pictureUrl")? player.pictureUrl : "img/no_user.jpg")
+
+            bigIfChanged($(".stackSize", this), player.stackSize,7);
+            //$(".stackSize", this).html(player.stackSize);
+
+            bigIfChanged($(".currentBet", this), player.currentBet,7);
+            //$(".currentBet", this).html(player.currentBet);
+
+
+            // player cards
+            $.each($("img.card", this), function(i){
+                var img = "";
+                if (player.holeCards.length > i){
+                    card = player.holeCards[i];
+                    var img = ( card.suit == "SPADES" ? "s":
+                                card.suit == "HEARTS" ? "h":
+                                card.suit == "DIAMONDS" ? "d":
+                                card.suit == "CLUBS" ? "c":"") + card.rank + ".png";
+                    $(this).attr("src","img/cards/"+img);
+                }else{
+                    $(this).attr("src","img/cards/back.png");
+                }
+            });
+
+            //dealer?
+            if (player.position == game.dealer){
+                $("img.dealer",this).show();
+            } else {
+                $("img.dealer",this).hide();
+            }
+
+            // Fade folded cards
+            if (!player.isIn)
+            	$("img.card", this).fadeTo(0, 0.5);
+            else
+            	$("img.card", this).fadeTo(0, 1.0);
+
+            
+            //say
+            if (game.previousPlayer != -1 && game.previousPlayer != previousPreviousPlayer) {
+				if (player.position == game.previousPlayer) {
+	                $("div.say", this).html(player.message);
+	                $("div.action", this).html(player.lastMove + " " + player.lastBet).show();
+	                $("div.say", this).fadeIn("slow");
+	                	
+				} else {
+	                $("div.say", this).fadeOut("slow");
+	                //$("div.action", this).html("");
+	                $("div.action", this).fadeOut(2000);
+				}
+            }
+
+        }
+    });
+
+    if (game.lastEvent && game.lastEvent.indexOf("won") != -1) {
+    	$("p#lastEvent").html(game.lastEvent);
+    	$("p#lastEvent").show();
+    } else {
+        $("p#lastEvent").fadeOut("slow");
+    }
+    
+
+    if (game.dealer != previousDealer) {
+    	// show all cards
+    	$("img.card").fadeTo(0, 1.0);
+    	previousDealer = game.dealer;    
+        $("div.say").hide();
+        $("div.action").html("");
+
+    }
+    
+    previousPreviousPlayer = game.previousPlayer;
+    
+    if (DEBUG == false){
+        setTimeout(function(){
+            $.get('http://localhost:8080/it/',prepareJson);
+        }, 250);
+    }
+}
+
+var game = "";
+var prepareJson = function(json) {
+    console.log("prepareJson");
+    // reorganize json
+    game = json["com.videoplaza.poker.game.model.Game"]
+    game.players = game.players["com.videoplaza.poker.game.model.Player"];
+
+    $.each(game.players, function(i){
+        if (this.holeCards) {
+            console.log(this.holeCards);
+            this.holeCards = this.holeCards["com.videoplaza.poker.game.model.Card"];
+        }
+    });
+    game.cards = game.cards["com.videoplaza.poker.game.model.Card"];
+    updateDisplay();
+}
+
+
+$(document).ready(function() {
+        //fulhack för att ska pa 10 platser med lite html
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+        $('ul#players li:first').clone().appendTo('ul#players');
+
+	console.log("document.ready");
+	$.get('http://localhost:8080/it/',prepareJson);
+	console.log("call returned");
+});
+        </script>
+        <style type="text/css">
+
+body{
+
+    background: url("img/table.png") repeat;
+    /*background: url("img/bg-logo.png") no-repeat;*/
+    font-size: 14px;
+    font-family: DIN;
+    font-weight:bold;
+}
+p{
+    margin:0;
+    margin-bottom: 3px;
+}
+div#table-panel{
+    background-color:rgba(0,0,0,0.5);
+    position: relative;
+    width: 400px;
+    height: 175px;
+    margin-left: 300px;
+    margin-top: 250px;
+    color: white;
+    float: left;
+    padding:10px;
+
+}div#table-panel img {
+    float: left;
+    margin-top: 35px;
+    margin-left: 7px;
+}
+div#log{
+
+    display: none; /* ! */
+
+    background-color:rgba(0,0,0,0.5);
+    position: relative;
+    width: 300px;
+    height: 680px;
+    color: white;
+    margin:70px 10px;
+    float: left;
+    padding:10px;
+}
+div#table{
+    position: relative;
+    width: 1000px;
+    height: 700px;
+    /*background: url("img/table.png") repeat;*/
+    color: white;
+    margin:70px 10px;
+    float: left;
+
+}
+ul#players ,ul#players li{
+    display: block;
+    margin: 0px;
+    padding: 0px;
+}
+ul#players li{
+    position: absolute;
+    height: 220px;
+    width: 150px;
+    background-color:rgba(0,0,0,0.5);
+    padding: 10px;
+    margin: 10px;
+
+}
+
+ul#players img.picture{
+    width: 80px;
+    height: 120px;
+    float: right;
+}
+
+ul#players img.card{
+    position: absolute;
+    bottom: 0px;
+}
+ul#players img.card:nth-child(1){
+    right: 10px;
+}
+
+
+ul#players div.say{
+    position: absolute;
+    top: -90px;
+    left: 130px;
+    /*background-color: white;*/
+    background-image: url(img/talk.png);
+    height: 107px;
+    width: 170px;
+    padding: 4px;
+    color: black;
+    z-index: 1000;
+    display:none;
+}
+ul#players div.action{
+    position: absolute;
+    top: 220px;
+    left: 0;
+    background-color: white;
+    height: 26px;
+    width: 162px;
+    padding: 4px;
+    color: black;
+    z-index: 1000;
+    background:rgba(255, 255, 255, 0.9);
+    text-align: center;
+    display: none;
+    font-size: 26px;
+}
+ul#players img.dealer{
+    position: absolute;
+    top: -40px;
+    left: -30px;
+    width: 80px;
+    height: 60px;
+    z-index: 900;
+
+}
+
+p#potSize {
+	position:absolute;
+	right: -270px;
+	top: 45px;
+	font-size: 96px;
+	
+	color: #F5B800;	
+}
+
+p#lastEvent {
+	position:fixed;
+	left: 0%;
+	top: 0%;
+	width:100%;
+	height:100%;
+	padding-top:400px;
+	text-align:center;
+	font-size: 96px;
+	background:rgba(0, 0, 0, 0.6);
+	color: #faa61a;
+	z-index:1100;
+}
+
+p.author{
+    font-size: 11px;
+}
+p.stackSize, p.currentBet{
+    font-size: 20px;
+	color: #F5B800;	
+}
+
+        </style>
+    </head>
+
+<body>
+    <div id="log">
+        <h2>Log</h2>
+
+        big blind<p id="bigBlind"></p>
+        small blind<p id="smallBlind"></p>
+        highest bet<p id="highestBet"></p>
+        minimum raise<p id="minimumRaise"></p>
+        isTimeToBet<p id="isTimeToBet"></p>
+    </div>
+        <p id="lastEvent"></p>
+    <div id="table">
+        <div id="table-panel">
+				    <p id="potSize"></p>
+                    <img class="card" alt="" src="img/cards/back.png"/>
+                    <img class="card" alt="" src="img/cards/back.png"/>
+                    <img class="card" alt="" src="img/cards/back.png"/>
+                    <img class="card" alt="" src="img/cards/back.png"/>
+                    <img class="card" alt="" src="img/cards/back.png"/>
+        </div>
+        <ul id="players">
+            <li>
+                <img class="picture"  alt="" src=""/>
+                <p class="name"></p>
+                <p class="author"></p>
+                stack: <p class="stackSize"></p>
+                bet: <p class="currentBet"></p>
+                <div class="cards">
+                    <img class="card"  alt="" src=""/>
+                    <img class="card"  alt="" src=""/>
+                </div>
+                <div class="say"></div>
+                <div class="action"></div>
+                <img class="dealer" alt="" src="img/dealer.png" />
+            </li>
+        </ul>
+    </div>
+</body>
+</html>

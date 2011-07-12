@@ -1,0 +1,10 @@
+#jocke
+http://localhost:8085/bot/
+#others
+http://localhost:8085/bot/
+http://localhost:8085/bot/
+http://localhost:8085/bot/
+http://localhost:8085/bot/
+http://localhost:8085/bot/
+http://localhost:8085/bot/
+
