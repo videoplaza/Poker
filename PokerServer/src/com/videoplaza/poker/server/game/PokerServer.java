@@ -7,7 +7,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import com.videoplaza.poker.server.servlets.DisplayServlet;
 import com.videoplaza.poker.server.servlets.PokerServlet;
 
-public class Test {
+public class PokerServer {
    public static void main(String[] args) throws Exception {
       Server server = new Server(8080);
 
