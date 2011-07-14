@@ -127,7 +127,6 @@ public class PokerGame implements Runnable {
 
    protected void distributePot() {
       //saveGameState("chip_fail.json");
-      int prevMinBet = 0;
       int remainingPot = game.getPotSize();
       List<Player> remainingPlayersInPot = new ArrayList<Player>();
       for (Player player : game.getPlayers()) {
@@ -135,14 +134,25 @@ public class PokerGame implements Runnable {
             remainingPlayersInPot.add(player);
          }
       }
+      int round = 1;
       while (remainingPot > 0 && remainingPlayersInPot.size() > 0) {
-         // calculate smallest bet among remaining players
+    	 System.out.println("------------------------------Distribute pot round " + round++);
+    	 System.out.println("Remaining pot: " + remainingPot);
+    	 System.out.println("Remaining players in pot: " + remainingPlayersInPot.toString());
+         if(remainingPlayersInPot.size() == 1){
+        	 Player winner = remainingPlayersInPot.get(0);
+        	 Lobby.getInstance().displayEvent(game, winner.getName() + " won " + remainingPot + " chips.");
+             winner.increaseStackSize(remainingPot);
+             break;
+         }
+    	  // calculate smallest bet among remaining players
          int minBet = Integer.MAX_VALUE;
          for (Player player : remainingPlayersInPot) {
             if (player.getCurrentBet() < minBet) {
                minBet = player.getCurrentBet();
             }
          }
+         System.out.println("Minbet: " + minBet);
 
          // calculate size of side pot		   
          int sidePot = 0;
@@ -150,8 +160,7 @@ public class PokerGame implements Runnable {
             sidePot += Math.min(player.getCurrentBet(), minBet);
             player.setCurrentBet(Math.max(0, player.getCurrentBet() - minBet));
          }
-         prevMinBet = minBet;
-
+         System.out.println("Sidepot: " + sidePot);
          // get winners and split side pot amongst them
          List<Player> winners = PokerUtil.getWinningPlayers(remainingPlayersInPot, game.getCards());
          int winning = sidePot / winners.size();
@@ -160,9 +169,10 @@ public class PokerGame implements Runnable {
             winner.increaseStackSize(winning);
 
          }
+         System.out.println("Winners: " + winners.toString());
          Set<Player> toRemove = new HashSet<Player>();
          for (Player player : remainingPlayersInPot) {
-            if (player.getCurrentBet() <= minBet) {
+            if (player.getCurrentBet() <= 0) {
                // player only came to this level
                toRemove.add(player);
             }
@@ -297,8 +307,6 @@ public class PokerGame implements Runnable {
 
       game.setTimeToBet(false);
 
-      // TODO: split pot correctly considering all-in players
-      //determineWinner();
       distributePot();
    }
 

@@ -76,7 +76,7 @@ public class PokerServlet extends HttpServlet {
                Lobby.getInstance().setBlinds(getParamWithNullCheck(PARAM_TABLE, request), getIntParamWithNullCheck(PARAM_SMALL_BLIND, request));
             } else if (action.equalsIgnoreCase("set_pause_lengths")) {
                // set pause lengths
-               Lobby.getInstance().setPauseLengths(getParamWithNullCheck(PARAM_TABLE, request), getIntParamWithNullCheck(PARAM_DEAL_PAUSE, request),
+               Lobby.getInstance().setPauseLengths(request.getParameter(PARAM_TABLE), getIntParamWithNullCheck(PARAM_DEAL_PAUSE, request),
                      getIntParamWithNullCheck(PARAM_END_PAUSE, request));
             } else if (action.equalsIgnoreCase("get_tables")) {
                // return tables

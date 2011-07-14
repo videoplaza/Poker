@@ -251,7 +251,7 @@ public class Lobby {
          Thread gameThread = new Thread(gameRunnable);
          System.out.println("Spawning new game thread for restored table with " + toRestore.getPlayers().size() + " players");
          //toRestore.setState(Game.State.PLAYING);
-         gameThread.run();
+         gameThread.start();
          System.out.println("... and not blocking servlet worker thread");
          return;
       } catch (Exception e1) {
@@ -275,16 +275,23 @@ public class Lobby {
 
    public void setPauseLengths(String tableId, int break1, int break2) {
       // set pause lengths
-      for (Game game : games) {
-         if (game.getId().equals(tableId)) {
-            // found game, set blinds
-            System.out.println("Setting pause lengths for table " + tableId + " to " + break1 + "/" + break2);
-            game.setBetPauseLength(break1);
-            game.setEndPauseLength(break2);
-            return;
+     Game game = null;
+     if(tableId == null || tableId.trim().length() == 0){
+    	 game = games.get(0);
+     } else 
+	   for (Game candidate: games) {
+         if (candidate.getId().equals(tableId)) {
+            game = candidate;
          }
       }
-      System.out.println("No table with id " + tableId);
+      if(game != null){
+     	  // found game, set blinds
+          System.out.println("Setting pause lengths for table " + tableId + " to " + break1 + "/" + break2);
+          game.setBetPauseLength(break1);
+          game.setEndPauseLength(break2);
+      } else {
+    	  System.out.println("No table with id " + tableId);
+      }
    }
 
    private void spawnTable(Game game, int startStack) {
@@ -296,7 +303,7 @@ public class Lobby {
       Thread gameThread = new Thread(gameRunnable);
       System.out.println("Spawning new game thread with " + game.getPlayers().size());
       game.setState(Game.State.PLAYING);
-      gameThread.run();
+      gameThread.start();
       System.out.println("... and not blocking servlet worker thread");
    }
 
