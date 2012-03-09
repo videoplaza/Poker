@@ -13,27 +13,6 @@ import com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver;
 
 public class Game {
 
-   public enum State {
-      WAITING, PLAYING, FINISHED
-   }
-
-   public static Game restoreFromFile(String filename) throws IOException {
-      FileInputStream is = new FileInputStream(filename);
-      BufferedReader br = new BufferedReader(new InputStreamReader(is));
-      String line = br.readLine();
-      StringBuilder xmlBuilder = new StringBuilder();
-      while (line != null) {
-         xmlBuilder.append(line);
-         line = br.readLine();
-      }
-      String xml = xmlBuilder.toString();
-      XStream xstream = new XStream(new JettisonMappedXmlDriver());
-      Game toRestore = null;
-      toRestore = (Game) xstream.fromXML(xml);
-      toRestore.setId(UUID.randomUUID().toString());
-      return toRestore;
-   }
-
    private List<Player> players = new ArrayList<Player>();
 
    private String id = UUID.randomUUID().toString();
@@ -41,11 +20,11 @@ public class Game {
    private String lastEvent;
 
    private State state;
+
    private List<Card> cards = new ArrayList<Card>();
+
    private int workaround;
-
    private int dealer;
-
    private int potSize;
 
    private int bigBlind;
@@ -61,11 +40,11 @@ public class Game {
    private int betPauseLength;
 
    private int endPauseLength;
+
    private int startStack;
+
    private int latestRaisingPlayer;
-
    private int previousPlayer;
-
    private int nextPlayer;
 
    public Game() {
@@ -250,6 +229,27 @@ public class Game {
       }
       sb = new StringBuilder(sb.subSequence(0, sb.length() - 2));
       return sb.toString();
+   }
+
+   public static Game restoreFromFile(String filename) throws IOException {
+      FileInputStream is = new FileInputStream(filename);
+      BufferedReader br = new BufferedReader(new InputStreamReader(is));
+      String line = br.readLine();
+      StringBuilder xmlBuilder = new StringBuilder();
+      while (line != null) {
+         xmlBuilder.append(line);
+         line = br.readLine();
+      }
+      String xml = xmlBuilder.toString();
+      XStream xstream = new XStream(new JettisonMappedXmlDriver());
+      Game toRestore = null;
+      toRestore = (Game) xstream.fromXML(xml);
+      toRestore.setId(UUID.randomUUID().toString());
+      return toRestore;
+   }
+
+   public enum State {
+      WAITING, PLAYING, FINISHED
    }
 
 }

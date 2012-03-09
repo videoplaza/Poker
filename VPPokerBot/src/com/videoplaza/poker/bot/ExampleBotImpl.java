@@ -15,20 +15,17 @@ public class ExampleBotImpl implements Bot {
 
    @Override
    public String getAvatarImageUrl() {
-      // TODO Auto-generated method stub
-      return "http://www.familjemannen.se/wp-content/uploads/2011/02/Boss_Hogg.jpg";
+      return "http://disturbingauctions.com/thumbnails/froggolf.jpg";
    }
 
    @Override
    public String getCreator() {
-      // TODO Auto-generated method stub
-      return "Jocke";
+      return "ExampleBot";
    }
 
    @Override
    public String getName(HttpServletRequest req) {
-      // TODO Auto-generated method stub
-      return "Jocke " + rnd.nextInt(100);
+      return "Example " + rnd.nextInt(100);
    }
 
    @Override
@@ -36,10 +33,10 @@ public class ExampleBotImpl implements Bot {
       if (rnd.nextInt(100) < 20) {
          return new Bet(0, "");
       }
-      if (rnd.nextInt(100) > 90) {
+      if (rnd.nextInt(100) > 95) {
          return new Bet(me.getStackSize(), "All in");
       }
-      return new Bet(rnd.nextInt(me.getStackSize()), "Like a boss");
+      return new Bet(rnd.nextInt(me.getStackSize() / 10), "Like a boss");
    }
 
 }
