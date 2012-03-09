@@ -1,13 +1,14 @@
 package com.videoplaza.poker.game.model;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class Deck {
    private List<Card> cards = new ArrayList<Card>();
    private int topOfStack = 0;
+   private boolean rigged = false;
 
    public Deck() {
       for (Suit suit : Suit.values()) {
@@ -17,6 +18,8 @@ public class Deck {
    }
 
    public Card deal() {
+      if (rigged)
+         return new Card(Suit.HEARTS, (int) (Math.random() + 13.5));
       if (topOfStack < cards.size())
          return cards.get(topOfStack++);
       return null;
@@ -26,8 +29,7 @@ public class Deck {
       return cards.get(index);
    }
 
-   public void shuffle() {
-      SecureRandom random = new SecureRandom();
-      Collections.shuffle(cards, random);
+   public void shuffle(Random rnd) {
+      Collections.shuffle(cards, rnd);
    }
 }

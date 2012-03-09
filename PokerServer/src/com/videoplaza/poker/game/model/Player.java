@@ -29,7 +29,8 @@ public class Player {
 
    private Move lastMove;
 
-   private boolean isMockBot;
+   private Bot bot;
+   private boolean isMockBot; // For compatibility with old state files.
 
    public Player() {
    }
@@ -67,7 +68,9 @@ public class Player {
    }
 
    public Bot getBot() {
-      if (isMockBot())
+      if (bot != null) {
+         return bot;
+      } else if (isMockBot)
          return new MockBot(this);
       return new NetworkBot(this);
    }
@@ -121,7 +124,7 @@ public class Player {
    }
 
    public boolean isAllIn() {
-      return lastMove == Move.ALL_IN || lastMove == Move.RAISE_ALL_IN;
+      return isInPot() && stackSize == 0;
    }
 
    public boolean isIn() {
@@ -129,16 +132,17 @@ public class Player {
    }
 
    public boolean isInPot() {
+      // Not out or fold
       Move[] moves = new Move[] { Move.BIG_BLIND, Move.CALL, Move.CHECK, Move.RAISE, Move.SMALL_BLIND, Move.WAITING, Move.BET, Move.ALL_IN, Move.RAISE_ALL_IN };
       return Arrays.asList(moves).contains(lastMove);
    }
 
-   public boolean isMockBot() {
-      return isMockBot;
-   }
-
    public void setAuthor(String author) {
       this.author = author;
+   }
+
+   public void setBot(Bot bot) {
+      this.bot = bot;
    }
 
    public void setBotUrl(String botUrl) {
@@ -159,18 +163,11 @@ public class Player {
 
    public void setLastMove(Move lastMove) {
       this.lastMove = lastMove;
-      if (lastMove == Move.OUT || lastMove == Move.FOLD)
-         isIn = false;
-      else
-         isIn = true;
+      isIn = isInPot();
    }
 
    public void setMessage(String message) {
       this.message = message;
-   }
-
-   public void setMockBot(boolean isMockBot) {
-      this.isMockBot = isMockBot;
    }
 
    public void setName(String name) {

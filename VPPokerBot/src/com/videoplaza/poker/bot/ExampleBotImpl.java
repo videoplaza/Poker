@@ -9,8 +9,6 @@ import com.videoplaza.poker.game.model.Player;
 
 public class ExampleBotImpl implements Bot {
 
-   private static int counter = 0;
-
    private static final Random rnd = new Random(System.currentTimeMillis());
 
    @Override
@@ -30,13 +28,20 @@ public class ExampleBotImpl implements Bot {
 
    @Override
    public Bet play(Game game, Player me, HttpServletRequest req) {
-      if (rnd.nextInt(100) < 20) {
+      if (rnd.nextInt(100) < 25) {
          return new Bet(0, "");
       }
-      if (rnd.nextInt(100) > 95) {
+      if (rnd.nextInt(100) > 98) {
          return new Bet(me.getStackSize(), "All in");
       }
-      return new Bet(rnd.nextInt(me.getStackSize() / 10), "Like a boss");
+      if (rnd.nextInt(100) > 50) {
+         return new Bet(me.getStackSize(), "All in");
+      }
+      return new Bet(rnd.nextInt(toCall(game, me) + game.getMinimumRaise()), "Like a boss");
+   }
+
+   private int toCall(Game game, Player myself) {
+      return game.getHighestBet() - myself.getCurrentBet();
    }
 
 }

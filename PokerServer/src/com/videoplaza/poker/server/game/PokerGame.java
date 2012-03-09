@@ -1,16 +1,12 @@
 package com.videoplaza.poker.server.game;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.json.JettisonMappedXmlDriver;
 import com.videoplaza.poker.game.model.Card;
 import com.videoplaza.poker.game.model.Deck;
 import com.videoplaza.poker.game.model.Game;
@@ -23,10 +19,14 @@ import com.videoplaza.poker.server.bot.BotResponse;
 public class PokerGame implements Runnable {
 
    protected Game game;
+   private PokerDisplay display;
+   private Random random;
 
-   public PokerGame(Game game, int startStack) {
+   public PokerGame(Game game, int startStack, PokerDisplay display, Random random) {
       super();
       this.game = game;
+      this.display = display;
+      this.random = random;
       game.setStartStack(startStack);
    }
 
@@ -40,7 +40,7 @@ public class PokerGame implements Runnable {
       game.setDealer(resolveDealer());
       int currentPlayerIndex = resolveActivePlayer(game.getDealer(), 3);
       Deck deck = new Deck();
-      deck.shuffle();
+      deck.shuffle(random);
 
       getDisplay().displayEvent(game, "Dealing hole cards");
       for (Player player : game.getPlayers()) {
@@ -99,9 +99,9 @@ public class PokerGame implements Runnable {
       int deal = 0;
       while (game.getState() == Game.State.PLAYING) {
          if (deal == 0)
-            saveGameState(game.getId() + "_start.json");
+            game.saveToFile(game.getId() + "_start.json");
          else
-            saveGameState(game.getId() + "_" + deal + ".json");
+            game.saveToFile(game.getId() + "_" + deal + ".json");
          checkChipIntegrity();
          getDisplay().displayEvent(game, "Starting tournament deal " + ++deal);
          doRound();
@@ -113,6 +113,10 @@ public class PokerGame implements Runnable {
          }
          updateGameState();
       }
+   }
+
+   public void setDisplay(PokerDisplay display) {
+      this.display = display;
    }
 
    protected boolean checkChipIntegrity() {
@@ -144,12 +148,6 @@ public class PokerGame implements Runnable {
          System.out.println("------------------------------Distribute pot round " + round++);
          System.out.println("Remaining pot: " + remainingPot);
          System.out.println("Remaining players in pot: " + remainingPlayersInPot.toString());
-         if (remainingPlayersInPot.size() == 1) {
-            Player winner = remainingPlayersInPot.get(0);
-            getDisplay().displayEvent(game, winner.getName() + " won " + remainingPot + " chips.");
-            winner.increaseStackSize(remainingPot);
-            break;
-         }
          // calculate smallest bet among remaining players
          int minBet = Integer.MAX_VALUE;
          for (Player player : remainingPlayersInPot) {
@@ -169,9 +167,31 @@ public class PokerGame implements Runnable {
          // get winners and split side pot amongst them
          List<Player> winners = PokerUtil.getWinningPlayers(remainingPlayersInPot, game.getCards());
          int winning = sidePot / winners.size();
+         int remains = sidePot - (winning * winners.size());
+
+         int[] winPerPlayer = new int[game.getPlayers().size()];
          for (Player winner : winners) {
-            getDisplay().displayEvent(game, winner.getName() + " won " + winning + " chips.");
-            winner.increaseStackSize(winning);
+            winPerPlayer[winner.getPosition()] += winning;
+         }
+         // distribute remains
+         int worstPosition = game.getDealer() + 1 % game.getPlayers().size();
+         while (remains > 0) {
+            Player player = game.getPlayers().get(worstPosition);
+            if (winners.contains(player)) {
+               winPerPlayer[worstPosition]++;
+               remains--;
+            }
+            worstPosition++;
+            worstPosition %= game.getPlayers().size();
+         }
+
+         for (int i = 0; i < game.getPlayers().size(); i++) {
+            if (winPerPlayer[i] > 0) {
+               Player winner = game.getPlayers().get(i);
+               getDisplay().displayEvent(game, winner.getName() + " won " + winPerPlayer[i] + " chips.");
+               winner.increaseStackSize(winPerPlayer[i]);
+            }
+
          }
          System.out.println("Winners: " + winners.toString());
          Set<Player> toRemove = new HashSet<Player>();
@@ -184,6 +204,21 @@ public class PokerGame implements Runnable {
          remainingPlayersInPot.removeAll(toRemove);
          remainingPot -= sidePot;
       }
+   }
+
+   protected void updateGameState() {
+      Player winner = null;
+      for (Player player : game.getPlayers()) {
+         if (player.getStackSize() > 0) {
+            if (winner == null) {
+               winner = player;
+            } else {
+               return;
+            }
+         }
+      }
+      getDisplay().displayEvent(game, "Tournament ended, winner was " + winner.getName());
+      game.setState(State.FINISHED);
    }
 
    private void applyBet(Player player, int bet) {
@@ -357,8 +392,8 @@ public class PokerGame implements Runnable {
       return response.amount;
    }
 
-   private Lobby getDisplay() {
-      return Lobby.getInstance();
+   private PokerDisplay getDisplay() {
+      return display;
    }
 
    private Player getNextActivePlayer(int index) {
@@ -421,38 +456,6 @@ public class PokerGame implements Runnable {
 
    private int resolveDealer() {
       return resolveActivePlayer(game.getDealer(), 1);
-   }
-
-   private void saveGameState(String stateName) {
-      try {
-         // serialize game state
-         XStream xstream = new XStream(new JettisonMappedXmlDriver());
-         StringWriter jsonWriter = new StringWriter();
-         xstream.toXML(game, jsonWriter);
-         String data = jsonWriter.getBuffer().toString();
-         File saveFile = new File(stateName);
-         FileWriter fw = new FileWriter(saveFile);
-         fw.write(data);
-         fw.close();
-         System.out.println("Successfully saved game state to file: " + saveFile);
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
-   }
-
-   private void updateGameState() {
-      Player winner = null;
-      for (Player player : game.getPlayers()) {
-         if (player.getStackSize() > 0) {
-            if (winner == null) {
-               winner = player;
-            } else {
-               return;
-            }
-         }
-      }
-      getDisplay().displayEvent(game, "Tournament ended, winner was " + winner.getName());
-      game.setState(State.FINISHED);
    }
 
 }

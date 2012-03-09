@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,9 +20,10 @@ import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Game.State;
 import com.videoplaza.poker.game.model.Player;
 import com.videoplaza.poker.game.model.Player.Move;
+import com.videoplaza.poker.server.bot.MockBot;
 import com.videoplaza.poker.server.speech.SpeechUtil;
 
-public class Lobby {
+public class Lobby implements PokerDisplay {
 
    private static final int MAX_PLAYERS_PER_TABLE = 10;
 
@@ -46,6 +48,10 @@ public class Lobby {
       playerConnect("", "MockBot " + counter++, "None", "", true);
    }
 
+   /* (non-Javadoc)
+    * @see com.videoplaza.poker.server.game.PokerDisplay#displayEvent(com.videoplaza.poker.game.model.Game, java.lang.String)
+    */
+   @Override
    public void displayEvent(Game state, String event) {
       Game g = new Game(state);
       display = g;
@@ -67,6 +73,10 @@ public class Lobby {
       }
    }
 
+   /* (non-Javadoc)
+    * @see com.videoplaza.poker.server.game.PokerDisplay#displayPlayerMove(com.videoplaza.poker.game.model.Game, com.videoplaza.poker.game.model.Player, com.videoplaza.poker.game.model.Player)
+    */
+   @Override
    public void displayPlayerMove(Game state, Player previousPlayer, Player nextPlayer) {
       Game g = new Game(state);
       display = g;
@@ -200,7 +210,8 @@ public class Lobby {
       player.setName(name);
       player.setPictureUrl(pictureUrl);
       player.setBotUrl(botUrl);
-      player.setMockBot(isMockBot);
+      if (isMockBot)
+         player.setBot(new MockBot(player));
 
       if (getGames() == null) {
          games = new ArrayList<Game>();
@@ -248,7 +259,7 @@ public class Lobby {
          for (Player player : toRestore.getPlayers()) {
             totalStack += player.getStackSize();
          }
-         PokerGame gameRunnable = new PokerGame(toRestore, totalStack / toRestore.getPlayers().size());
+         PokerGame gameRunnable = new PokerGame(toRestore, totalStack / toRestore.getPlayers().size(), this, new SecureRandom());
          Thread gameThread = new Thread(gameRunnable);
          System.out.println("Spawning new game thread for restored table with " + toRestore.getPlayers().size() + " players");
          //toRestore.setState(Game.State.PLAYING);
@@ -341,7 +352,7 @@ public class Lobby {
          player.setStackSize(startStack);
       }
       // found game, spawn game thread
-      PokerGame gameRunnable = new PokerGame(game, startStack);
+      PokerGame gameRunnable = new PokerGame(game, startStack, this, new SecureRandom());
       Thread gameThread = new Thread(gameRunnable);
       System.out.println("Spawning new game thread with " + game.getPlayers().size());
       game.setState(Game.State.PLAYING);

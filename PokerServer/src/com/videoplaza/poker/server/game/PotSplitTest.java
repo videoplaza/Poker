@@ -8,11 +8,10 @@ import org.junit.Test;
 
 import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Player;
-import com.videoplaza.poker.server.bot.MockBot;
+import com.videoplaza.poker.server.bot.AllInBot;
 
-public class PokerGameTest {
-
-   private static final Random RANDOM = new Random(1);
+public class PotSplitTest {
+   private static final Random RANDOM = new Random(3);
    private PokerGame pokerGame;
 
    @Before
@@ -20,37 +19,21 @@ public class PokerGameTest {
       Game game = Game.restoreFromFile("test_data_game_start.json");
       pokerGame = new PokerGame(game, 1000, new MockDisplay(), RANDOM);
       for (Player player : game.getPlayers()) {
-         player.setBot(new MockBot(player));
+         player.setBot(new AllInBot());
       }
-      int multiplier = 10000;
+      int multiplier = 0;
       for (Player player : pokerGame.game.getPlayers()) {
-         player.setStackSize(player.getStackSize() * multiplier);
+         player.setStackSize(player.getStackSize() * multiplier++);
       }
-      pokerGame.game.setStartStack(pokerGame.game.getStartStack() * multiplier);
+      pokerGame.game.setStartStack(4500);
    }
 
    @Test
    public void testChipIntegrity() throws IOException {
-      boolean integrity = pokerGame.checkChipIntegrity();
-      assert (integrity);
-      pokerGame.game.getPlayers().get(0).setStackSize(0);
-      integrity = pokerGame.checkChipIntegrity();
-      assert (!integrity);
-   }
-
-   @Test
-   public void testOneRound() throws IOException {
-      pokerGame.doRound();
-      boolean integrity = pokerGame.checkChipIntegrity();
-      assert (integrity);
-   }
-
-   @Test
-   public void testUntilFail() throws IOException {
       while (true) {
          loadAndPrepare();
          while (pokerGame.game.getState() == Game.State.PLAYING) {
-            pokerGame.game.saveToFile("failState.json");
+            pokerGame.game.saveToFile("splitState.json");
             long seed = RANDOM.nextLong();
             RANDOM.setSeed(seed);
             System.out.println("Current seed " + seed);
@@ -61,5 +44,4 @@ public class PokerGameTest {
          }
       }
    }
-
 }

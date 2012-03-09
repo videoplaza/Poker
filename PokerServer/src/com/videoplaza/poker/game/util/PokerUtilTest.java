@@ -5,6 +5,7 @@ import static ch.lambdaj.Lambda.joinFrom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import com.videoplaza.poker.game.model.Card;
 import com.videoplaza.poker.game.model.Deck;
@@ -220,7 +221,7 @@ public class PokerUtilTest {
 
       System.out.println("Dealing random deck:");
       Deck deck = new Deck();
-      deck.shuffle();
+      deck.shuffle(new Random());
       Card card;
       while ((card = deck.deal()) != null) {
          System.out.print(card.toString() + " ");

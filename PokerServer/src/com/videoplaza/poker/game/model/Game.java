@@ -1,9 +1,12 @@
 package com.videoplaza.poker.game.model;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -144,6 +147,23 @@ public class Game {
 
    public boolean isTimeToBet() {
       return isTimeToBet;
+   }
+
+   public void saveToFile(String stateName) {
+      try {
+         // serialize game state
+         XStream xstream = new XStream(new JettisonMappedXmlDriver());
+         StringWriter jsonWriter = new StringWriter();
+         xstream.toXML(this, jsonWriter);
+         String data = jsonWriter.getBuffer().toString();
+         File saveFile = new File(stateName);
+         FileWriter fw = new FileWriter(saveFile);
+         fw.write(data);
+         fw.close();
+         System.out.println("Successfully saved game state to file: " + saveFile);
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
    }
 
    public void setBetPauseLength(int betPauseLength) {
