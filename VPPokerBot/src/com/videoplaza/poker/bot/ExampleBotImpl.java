@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Player;
 
-public class Jocke implements Bot {
+public class ExampleBotImpl implements Bot {
 
    private static int counter = 0;
 
