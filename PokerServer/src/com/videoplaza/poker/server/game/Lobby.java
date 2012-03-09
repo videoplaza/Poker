@@ -27,6 +27,8 @@ public class Lobby {
 
    private List<Game> games;
 
+   private boolean speaking = true;
+
    private volatile Game display;
    private static int counter = 0;
 
@@ -56,7 +58,8 @@ public class Lobby {
          System.out.print(card);
       }
       System.out.println();
-      SpeechUtil.say(event);
+      if (speaking)
+         SpeechUtil.say(event);
       try {
          Thread.sleep(state.getBetPauseLength());
       } catch (InterruptedException e) {
@@ -81,8 +84,10 @@ public class Lobby {
             dealerMessage.append(previousPlayer.getLastBet());
          }
          System.out.println(previousPlayer.toString() + dealerMessage.toString() + ". " + previousPlayer.getMessage());
-         SpeechUtil.say(previousPlayer.getName() + dealerMessage.toString());
-         SpeechUtil.say(previousPlayer.getMessage(), playerVoice);
+         if (speaking) {
+            SpeechUtil.say(previousPlayer.getName() + dealerMessage.toString());
+            SpeechUtil.say(previousPlayer.getMessage(), playerVoice);
+         }
       }
 
       if (nextPlayer != null) {
@@ -289,6 +294,10 @@ public class Lobby {
       } else {
          System.out.println("No table with id " + tableId);
       }
+   }
+
+   public void setSpeaking(boolean speaking) {
+      this.speaking = speaking;
    }
 
    public void startGame(String tableId, int startStack) {

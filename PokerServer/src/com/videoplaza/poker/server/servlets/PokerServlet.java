@@ -23,37 +23,9 @@ public class PokerServlet extends HttpServlet {
    private static final String PARAM_END_PAUSE = "end_pause";
    private static final String PARAM_RESTORE_FILE = "file";
    private static final String PARAM_TABLE_FILE = "table_file";
+   private static final String PARAM_SPEAKING = "speaking";
 
    private PrintWriter w;
-
-   private void beginForm() {
-      w.println("<form style=\"border:1px solid black;padding:20px;\">");
-   };
-
-   @Override
-   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-      handle(req, resp);
-   };
-
-   @Override
-   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-      handle(req, resp);
-   }
-
-   private void endForm(String action) {
-      w.println("<input type=\"submit\" name=\"action\" value=\"" + action + "\"></form>");
-   }
-
-   private int getIntParamWithNullCheck(String param, HttpServletRequest request) {
-      return Integer.parseInt(request.getParameter(param));
-   }
-
-   private String getParamWithNullCheck(String param, HttpServletRequest request) throws Exception {
-      String result = request.getParameter(param);
-      if (result == null)
-         throw new Exception("Parameter may not be null");
-      return result;
-   }
 
    public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
       try {
@@ -78,6 +50,9 @@ public class PokerServlet extends HttpServlet {
                // set pause lengths
                Lobby.getInstance().setPauseLengths(request.getParameter(PARAM_TABLE), getIntParamWithNullCheck(PARAM_DEAL_PAUSE, request),
                      getIntParamWithNullCheck(PARAM_END_PAUSE, request));
+            } else if (action.equalsIgnoreCase("set_speaking")) {
+               // set table speaking or not
+               Lobby.getInstance().setSpeaking(Boolean.parseBoolean(request.getParameter(PARAM_SPEAKING)));
             } else if (action.equalsIgnoreCase("get_tables")) {
                // return tables
                List<Game> games = Lobby.getInstance().getGames();
@@ -118,6 +93,10 @@ public class PokerServlet extends HttpServlet {
          inputBox(PARAM_END_PAUSE);
          endForm("set_pause_lengths");
          beginForm();
+         inputBox(PARAM_TABLE);
+         inputBox(PARAM_SPEAKING);
+         endForm("set_speaking");
+         beginForm();
          inputBox(PARAM_RESTORE_FILE);
          endForm("restore");
          beginForm();
@@ -131,6 +110,35 @@ public class PokerServlet extends HttpServlet {
          e.printStackTrace();
 
       }
+   };
+
+   @Override
+   protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+      handle(req, resp);
+   };
+
+   @Override
+   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+      handle(req, resp);
+   }
+
+   private void beginForm() {
+      w.println("<form style=\"border:1px solid black;padding:20px;\">");
+   }
+
+   private void endForm(String action) {
+      w.println("<input type=\"submit\" name=\"action\" value=\"" + action + "\"></form>");
+   }
+
+   private int getIntParamWithNullCheck(String param, HttpServletRequest request) {
+      return Integer.parseInt(request.getParameter(param));
+   }
+
+   private String getParamWithNullCheck(String param, HttpServletRequest request) throws Exception {
+      String result = request.getParameter(param);
+      if (result == null)
+         throw new Exception("Parameter may not be null");
+      return result;
    }
 
    private void inputBox(String name) {
