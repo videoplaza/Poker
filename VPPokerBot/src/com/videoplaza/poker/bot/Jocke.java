@@ -2,6 +2,8 @@ package com.videoplaza.poker.bot;
 
 import java.util.Random;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Player;
 
@@ -24,13 +26,13 @@ public class Jocke implements Bot {
    }
 
    @Override
-   public String getName() {
+   public String getName(HttpServletRequest req) {
       // TODO Auto-generated method stub
       return "Jocke " + rnd.nextInt(100);
    }
 
    @Override
-   public Bet play(Game game, Player me) {
+   public Bet play(Game game, Player me, HttpServletRequest req) {
       if (rnd.nextInt(100) < 20) {
          return new Bet(0, "");
       }

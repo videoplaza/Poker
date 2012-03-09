@@ -13,9 +13,6 @@ import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.server.game.Lobby;
 
 public class DisplayServlet extends HttpServlet {
-   /**
-    * 
-    */
    private static final long serialVersionUID = 1L;
 
    String greeting;

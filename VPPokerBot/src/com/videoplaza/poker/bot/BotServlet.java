@@ -21,7 +21,7 @@ public class BotServlet extends HttpServlet {
    private static final long serialVersionUID = 3277126036475556350L;
    private URLCodec encoder = new URLCodec();
 
-   private Bot botImpl = new Jocke();
+   private Bot botImpl = new Jakob();
 
    @Override
    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -33,7 +33,7 @@ public class BotServlet extends HttpServlet {
 
       if (req.getParameter("init") != null) {
          // get bot params
-         String name = botImpl.getName();
+         String name = botImpl.getName(req);
          String creator = botImpl.getCreator();
          String imageUrl = botImpl.getAvatarImageUrl();
          StringBuilder sb = new StringBuilder();
@@ -70,7 +70,7 @@ public class BotServlet extends HttpServlet {
             System.err.println();
             bet = new Bet(0, msg);
          } else {
-            bet = botImpl.play(game, me);
+            bet = botImpl.play(game, me, req);
          }
          int value = null != bet ? bet.getValue() : 0;
 

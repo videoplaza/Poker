@@ -2,6 +2,8 @@ package com.videoplaza.poker.bot;
 
 import java.util.Random;
 
+import javax.servlet.http.HttpServletRequest;
+
 import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Player;
 import com.videoplaza.poker.game.util.PokerUtil;
@@ -10,9 +12,8 @@ public class BotImpl implements Bot {
 
    private String name = names[new Random(System.currentTimeMillis()).nextInt(names.length)];
 
-   private static final String[] names = {
-         "Rouzbeh", "Jocke", "Jakob", "Dante", "Alfred", "Jesper", "Erik", "Per-Anders", "Bergman", "Nic", "Pablo", "Emma", "Elin", "Alex"
-   };
+   private static final String[] names = { "Rouzbeh", "Jocke", "Jakob", "Dante", "Alfred", "Jesper", "Erik", "Per-Anders", "Bergman", "Nic", "Pablo", "Emma",
+         "Elin", "Alex" };
 
    @Override
    public String getAvatarImageUrl() {
@@ -25,12 +26,12 @@ public class BotImpl implements Bot {
    }
 
    @Override
-   public String getName() {
+   public String getName(HttpServletRequest req) {
       return name;
    }
 
    @Override
-   public Bet play(Game game, Player me) {
+   public Bet play(Game game, Player me, HttpServletRequest req) {
       try {
          if (me.getStackSize() == 0) {
             System.err.println("I have no money");
