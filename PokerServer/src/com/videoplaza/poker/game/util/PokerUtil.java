@@ -84,16 +84,6 @@ public class PokerUtil {
       return list.get(4).getRank() * 160000 + list.get(3).getRank() * 8000 + list.get(2).getRank() * 400 + list.get(1).getRank() * 20 + list.get(0).getRank();
    }
 
-   private static List<Card> getDeck() {
-      List<Card> deck = new ArrayList<Card>();
-      for (Suit suit : Suit.values()) {
-         for (int i = 2; i <= 14; i++) {
-            deck.add(new Card(suit, i));
-         }
-      }
-      return deck;
-   }
-
    public static float getHandRank(List<Card> holeCards, List<Card> cardsOnTable) {
       assert holeCards.size() == 2;
       List<Integer> handValues = new ArrayList<Integer>();
@@ -111,55 +101,18 @@ public class PokerUtil {
             handValues.add(bestHand(hand));
          }
       }
-      Collections.sort(handValues);
 
       List<Card> hand = new ArrayList<Card>(cardsOnTable);
       hand.addAll(holeCards);
       int myHandValue = bestHand(hand);
+      handValues.add(bestHand(hand));
+
+      Collections.sort(handValues);
+
       System.out.println("Rank of your hand is " + handValues.indexOf(myHandValue) + " of " + handValues.size());
       System.out.println(myHandValue);
       System.out.println(handValues.get(handValues.size() - 1));
       return (float) handValues.indexOf(myHandValue) / (float) handValues.size();
-   }
-
-   static double[] getProbabilities(List<List<Card>> playerHoleCards, List<Card> cardsOnTable) {
-      double[] result = new double[playerHoleCards.size()];
-      double[] wins = getProbabilitiesHelper(playerHoleCards, cardsOnTable, 0);
-      int count = 0;
-      for (int player = 0; player < playerHoleCards.size(); player++) {
-         count += wins[player];
-      }
-      for (int player = 0; player < playerHoleCards.size(); player++) {
-         result[player] = (wins[player]) / (count);
-      }
-      return result;
-   }
-
-   private static double[] getProbabilitiesHelper(List<List<Card>> playerHoleCards, List<Card> cardsOnTable, int startAtDeckIndex) {
-      assert cardsOnTable.size() <= 5;
-      double[] totalWins = new double[playerHoleCards.size()];
-      List<Card> deck = getDeck();
-      for (List<Card> holeCards : playerHoleCards)
-         deck.removeAll(holeCards);
-      deck.removeAll(cardsOnTable);
-
-      if (cardsOnTable.size() == 5) {
-         List<Integer> winningPlayers = getWinningHand(playerHoleCards, cardsOnTable);
-         for (Integer bestPlayer : winningPlayers) {
-            totalWins[bestPlayer] = 1 / winningPlayers.size();
-         }
-      } else {
-         for (int i = startAtDeckIndex; i < deck.size(); i++) {
-            List<Card> newCardsOnTable = new ArrayList<Card>(cardsOnTable);
-            newCardsOnTable.add(deck.get(i));
-            double[] wins = getProbabilitiesHelper(playerHoleCards, newCardsOnTable, i);
-            for (int player = 0; player < playerHoleCards.size(); player++) {
-               totalWins[player] += wins[player];
-            }
-         }
-      }
-
-      return totalWins;
    }
 
    /**
@@ -207,6 +160,43 @@ public class PokerUtil {
       return winners;
    }
 
+   private static List<Card> getDeck() {
+      List<Card> deck = new ArrayList<Card>();
+      for (Suit suit : Suit.values()) {
+         for (int i = 2; i <= 14; i++) {
+            deck.add(new Card(suit, i));
+         }
+      }
+      return deck;
+   }
+
+   private static double[] getProbabilitiesHelper(List<List<Card>> playerHoleCards, List<Card> cardsOnTable, int startAtDeckIndex) {
+      assert cardsOnTable.size() <= 5;
+      double[] totalWins = new double[playerHoleCards.size()];
+      List<Card> deck = getDeck();
+      for (List<Card> holeCards : playerHoleCards)
+         deck.removeAll(holeCards);
+      deck.removeAll(cardsOnTable);
+
+      if (cardsOnTable.size() == 5) {
+         List<Integer> winningPlayers = getWinningHand(playerHoleCards, cardsOnTable);
+         for (Integer bestPlayer : winningPlayers) {
+            totalWins[bestPlayer] = 1 / winningPlayers.size();
+         }
+      } else {
+         for (int i = startAtDeckIndex; i < deck.size(); i++) {
+            List<Card> newCardsOnTable = new ArrayList<Card>(cardsOnTable);
+            newCardsOnTable.add(deck.get(i));
+            double[] wins = getProbabilitiesHelper(playerHoleCards, newCardsOnTable, i);
+            for (int player = 0; player < playerHoleCards.size(); player++) {
+               totalWins[player] += wins[player];
+            }
+         }
+      }
+
+      return totalWins;
+   }
+
    private static boolean isFlush(List<Card> list) {
       List<Suit> suits = extract(list, on(Card.class).getSuit());
       HashSet<Suit> suitSet = new HashSet<Suit>(suits);
@@ -252,5 +242,18 @@ public class PokerUtil {
       Set<Integer> ranks = new HashSet<Integer>();
       ranks.addAll(extract(list, on(Card.class).getRank()));
       return ranks.size() == 3;
+   }
+
+   static double[] getProbabilities(List<List<Card>> playerHoleCards, List<Card> cardsOnTable) {
+      double[] result = new double[playerHoleCards.size()];
+      double[] wins = getProbabilitiesHelper(playerHoleCards, cardsOnTable, 0);
+      int count = 0;
+      for (int player = 0; player < playerHoleCards.size(); player++) {
+         count += wins[player];
+      }
+      for (int player = 0; player < playerHoleCards.size(); player++) {
+         result[player] = (wins[player]) / (count);
+      }
+      return result;
    }
 }
