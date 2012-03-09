@@ -14,10 +14,10 @@ public class PokerGameTest {
    public void testChipIntegrity() throws IOException {
       Game game = Game.restoreFromFile("test_data_game_start.json");
       PokerGame pokerGame = new PokerGame(game, 1000);
-      boolean integrity = pokerGame.checkBordIntegrity();
+      boolean integrity = pokerGame.checkChipIntegrity();
       assert (integrity);
       pokerGame.game.getPlayers().get(0).setStackSize(0);
-      integrity = pokerGame.checkBordIntegrity();
+      integrity = pokerGame.checkChipIntegrity();
       assert (!integrity);
    }
 
@@ -36,7 +36,7 @@ public class PokerGameTest {
 
       pokerGame.distributePot();
 
-      assertTrue("chips!", pokerGame.checkBordIntegrity());
+      assertTrue("chips!", pokerGame.checkChipIntegrity());
 
    }
 
@@ -45,7 +45,7 @@ public class PokerGameTest {
       Game game = Game.restoreFromFile("test_data_game_start.json");
       PokerGame pokerGame = new PokerGame(game, 1000);
       pokerGame.doRound();
-      boolean integrity = pokerGame.checkBordIntegrity();
+      boolean integrity = pokerGame.checkChipIntegrity();
       assert (integrity);
    }
 
@@ -54,7 +54,7 @@ public class PokerGameTest {
       Game game = Game.restoreFromFile("test_data_game_start.json");
       PokerGame pokerGame = new PokerGame(game, 1000);
       pokerGame.doRound();
-      boolean integrity = pokerGame.checkBordIntegrity();
+      boolean integrity = pokerGame.checkChipIntegrity();
       assert (integrity);
    }
 
@@ -66,7 +66,7 @@ public class PokerGameTest {
 
       pokerGame.distributePot();
 
-      assertTrue("chips!", pokerGame.checkBordIntegrity());
+      assertTrue("chips!", pokerGame.checkChipIntegrity());
 
    }
 

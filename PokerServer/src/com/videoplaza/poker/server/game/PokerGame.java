@@ -1,16 +1,10 @@
 package com.videoplaza.poker.server.game;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.StringWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +18,7 @@ import com.videoplaza.poker.game.model.Game.State;
 import com.videoplaza.poker.game.model.Player;
 import com.videoplaza.poker.game.model.Player.Move;
 import com.videoplaza.poker.game.util.PokerUtil;
-import com.videoplaza.poker.server.util.GameMessageUtil;
+import com.videoplaza.poker.server.bot.BotResponse;
 
 public class PokerGame implements Runnable {
 
@@ -48,22 +42,17 @@ public class PokerGame implements Runnable {
       Deck deck = new Deck();
       deck.shuffle();
 
-      Lobby.getInstance().displayEvent(game, "Dealing hole cards");
+      getDisplay().displayEvent(game, "Dealing hole cards");
       for (Player player : game.getPlayers()) {
          player.setCurrentBet(0);
          player.setMessage("");
          if (player.getStackSize() <= 0) {
-            player.setCurrentBet(0);
             player.setLastMove(Move.OUT);
             player.setHoleCards(new ArrayList<Card>());
-            continue;
+         } else {
+            player.setLastMove(Move.WAITING);
+            player.setHoleCards(Arrays.asList(deck.deal(), deck.deal()));
          }
-         player.setLastMove(Move.WAITING);
-         player.setCurrentBet(0);
-         List<Card> holeCards = new ArrayList<Card>();
-         holeCards.add(deck.deal());
-         holeCards.add(deck.deal());
-         player.setHoleCards(holeCards);
       }
       postBlinds();
 
@@ -78,7 +67,7 @@ public class PokerGame implements Runnable {
       for (int i = 0; i < 3; i++) {
          game.getCards().add(deck.deal());
       }
-      Lobby.getInstance().displayEvent(game, "Dealing flop");
+      getDisplay().displayEvent(game, "Dealing flop");
       if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
          return;
 
@@ -87,7 +76,7 @@ public class PokerGame implements Runnable {
 
       // turn
       game.getCards().add(deck.deal());
-      Lobby.getInstance().displayEvent(game, "Dealing turn");
+      getDisplay().displayEvent(game, "Dealing turn");
       if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
          return;
 
@@ -96,7 +85,7 @@ public class PokerGame implements Runnable {
 
       // river
       game.getCards().add(deck.deal());
-      Lobby.getInstance().displayEvent(game, "Dealing river");
+      getDisplay().displayEvent(game, "Dealing river");
       if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
          return;
 
@@ -106,17 +95,17 @@ public class PokerGame implements Runnable {
    }
 
    public void run() {
-      Lobby.getInstance().displayEvent(game, "Starting new tournament. Blinds are " + game.getSmallBlind() + " / " + game.getBigBlind() + ".");
+      getDisplay().displayEvent(game, "Starting new tournament. Blinds are " + game.getSmallBlind() + " / " + game.getBigBlind() + ".");
       int deal = 0;
       while (game.getState() == Game.State.PLAYING) {
          if (deal == 0)
             saveGameState(game.getId() + "_start.json");
          else
             saveGameState(game.getId() + "_" + deal + ".json");
-         checkBordIntegrity();
-         Lobby.getInstance().displayEvent(game, "Starting tournament deal " + ++deal);
+         checkChipIntegrity();
+         getDisplay().displayEvent(game, "Starting tournament deal " + ++deal);
          doRound();
-         checkBordIntegrity();
+         checkChipIntegrity();
          try {
             Thread.sleep(game.getEndPauseLength());
          } catch (InterruptedException e) {
@@ -126,7 +115,7 @@ public class PokerGame implements Runnable {
       }
    }
 
-   protected boolean checkBordIntegrity() {
+   protected boolean checkChipIntegrity() {
       int totalChips = 0;
       for (Player player : game.getPlayers()) {
          totalChips += player.getStackSize();
@@ -157,7 +146,7 @@ public class PokerGame implements Runnable {
          System.out.println("Remaining players in pot: " + remainingPlayersInPot.toString());
          if (remainingPlayersInPot.size() == 1) {
             Player winner = remainingPlayersInPot.get(0);
-            Lobby.getInstance().displayEvent(game, winner.getName() + " won " + remainingPot + " chips.");
+            getDisplay().displayEvent(game, winner.getName() + " won " + remainingPot + " chips.");
             winner.increaseStackSize(remainingPot);
             break;
          }
@@ -170,7 +159,7 @@ public class PokerGame implements Runnable {
          }
          System.out.println("Minbet: " + minBet);
 
-         // calculate size of side pot		   
+         // calculate size of side pot         
          int sidePot = 0;
          for (Player player : game.getPlayers()) {
             sidePot += Math.min(player.getCurrentBet(), minBet);
@@ -181,9 +170,8 @@ public class PokerGame implements Runnable {
          List<Player> winners = PokerUtil.getWinningPlayers(remainingPlayersInPot, game.getCards());
          int winning = sidePot / winners.size();
          for (Player winner : winners) {
-            Lobby.getInstance().displayEvent(game, winner.getName() + " won " + winning + " chips.");
+            getDisplay().displayEvent(game, winner.getName() + " won " + winning + " chips.");
             winner.increaseStackSize(winning);
-
          }
          System.out.println("Winners: " + winners.toString());
          Set<Player> toRemove = new HashSet<Player>();
@@ -225,7 +213,7 @@ public class PokerGame implements Runnable {
       for (Player player : game.getPlayers()) {
          player.setCurrentBet(0);
       }
-      Lobby.getInstance().displayEvent(game, winner.getName() + " won " + game.getPotSize() + " chips.");
+      getDisplay().displayEvent(game, winner.getName() + " won " + game.getPotSize() + " chips.");
       return true;
    }
 
@@ -284,7 +272,7 @@ public class PokerGame implements Runnable {
             previousPlayer = currentPlayer;
             game.setPreviousPlayer(currentPlayerIndex);
             if (previousPlayer != null && previousPlayer.getLastMove() != Move.OUT) {
-               Lobby.getInstance().displayPlayerMove(game, previousPlayer, currentPlayer);
+               getDisplay().displayPlayerMove(game, previousPlayer, currentPlayer);
             }
          } else {
             // check if player state needs update
@@ -359,85 +347,18 @@ public class PokerGame implements Runnable {
    }
 
    private int getBet(Player player) {
-      if (player.isMockBot()) {
-         return MockBotUtil.getMockMove(game, player);
-      }
-
-      int playerBet = 0;
-      String playerChatMessage = null;
-      long startTimer = System.currentTimeMillis();
-      try {
-         // connect to bot
-         URL botUrl = new URL(player.getBotUrl());
-         HttpURLConnection connection = (HttpURLConnection) botUrl.openConnection();
-         connection.setRequestMethod("POST");
-         connection.setDoOutput(true);
-
-         // serialize game state
-         XStream xstream = new XStream(new JettisonMappedXmlDriver());
-         StringWriter jsonWriter = new StringWriter();
-         xstream.toXML(GameMessageUtil.applyPlayerPerpective(game, player), jsonWriter);
-         String data = URLEncoder.encode("game", "UTF-8") + "=" + URLEncoder.encode(jsonWriter.getBuffer().toString(), "UTF-8");
-
-         // send state to bot
-         OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
-         data = data + "\r\n\r\n";
-         writer.write(data);
-         writer.flush();
-         connection.setConnectTimeout(5000);
-         connection.setReadTimeout(5000);
-
-         // read bots response
-         BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-         StringBuilder response = new StringBuilder();
-         String inputLine;
-         while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-         }
-         in.close();
-
-         // parse bots response
-         String responseString = response.toString();
-         System.out.println("Response from player " + player + ": " + responseString);
-         responseString = responseString.trim();
-         int firstSpaceIndex = responseString.indexOf(" ");
-         if (firstSpaceIndex > 0) {
-            try {
-               playerBet = Integer.parseInt(responseString.substring(0, firstSpaceIndex));
-            } catch (NumberFormatException e) {
-               System.out.println("Invalid bet response format for player " + player + ": " + responseString.substring(0, firstSpaceIndex));
-            }
-            playerChatMessage = responseString.substring(firstSpaceIndex + 1);
-            playerChatMessage = URLDecoder.decode(playerChatMessage, "UTF-8");
-         } else {
-            try {
-               playerBet = Integer.parseInt(responseString);
-            } catch (NumberFormatException e) {
-               System.out.println("Invalid bet response format for player " + player + ": " + responseString.substring(0, firstSpaceIndex));
-            }
-
-         }
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
-      long timer = System.currentTimeMillis() - startTimer;
-      System.out.println("Player " + player + " responded in " + timer + " ms.");
-      /*
-      long toWait = game.getBetPauseLength() - timer;
-      if (toWait > 0) {
-         try {
-            Thread.sleep(toWait);
-         } catch (InterruptedException e) {
-            e.printStackTrace();
-         }
-      }
-      */
+      BotResponse response = player.getBot().askForMove(game);
+      String playerChatMessage = response.message;
       if (playerChatMessage != null && playerChatMessage.length() > 0) {
          player.setMessage(playerChatMessage);
       } else {
          player.setMessage("");
       }
-      return playerBet;
+      return response.amount;
+   }
+
+   private Lobby getDisplay() {
+      return Lobby.getInstance();
    }
 
    private Player getNextActivePlayer(int index) {
@@ -463,7 +384,7 @@ public class PokerGame implements Runnable {
       smallBlind.setLastBet(smallBlindAmount);
       game.increasePotSize(smallBlindAmount);
       smallBlind.setCurrentBet(smallBlindAmount);
-      Lobby.getInstance().displayEvent(game, smallBlind.getName() + " posts small blind " + smallBlindAmount);
+      getDisplay().displayEvent(game, smallBlind.getName() + " posts small blind " + smallBlindAmount);
       //Lobby.getInstance().displayPlayerMove(game, smallBlind, null);
       Player bigBlind = getNextActivePlayer(smallBlind.getPosition() + 1);
       int bigBlindAmount = game.getBigBlind();
@@ -481,7 +402,7 @@ public class PokerGame implements Runnable {
       bigBlind.setCurrentBet(bigBlindAmount);
       game.increasePotSize(bigBlindAmount);
       game.setHighestBet(Math.max(smallBlindAmount, bigBlindAmount));
-      Lobby.getInstance().displayEvent(game, bigBlind.getName() + " posts big blind " + bigBlindAmount);
+      getDisplay().displayEvent(game, bigBlind.getName() + " posts big blind " + bigBlindAmount);
       //Lobby.getInstance().displayPlayerMove(game, bigBlind, null);
    }
 
@@ -530,29 +451,8 @@ public class PokerGame implements Runnable {
             }
          }
       }
-      Lobby.getInstance().displayEvent(game, "Tournament ended, winner was " + winner.getName());
+      getDisplay().displayEvent(game, "Tournament ended, winner was " + winner.getName());
       game.setState(State.FINISHED);
-   }
-
-   public static void main(String[] args) {
-      int playerBet = 0;
-      String playerChatMessage = null;
-      StringBuilder response = new StringBuilder(" 2s3 hej csd     ");
-      String responseString = response.toString();
-      responseString = responseString.trim();
-      int firstSpaceIndex = responseString.indexOf(" ");
-      if (firstSpaceIndex > 0) {
-         try {
-            playerBet = Integer.parseInt(responseString.substring(0, firstSpaceIndex));
-         } catch (NumberFormatException e) {
-            System.out.print("Invalid bet response for player : " + responseString.substring(0, firstSpaceIndex));
-         }
-         playerChatMessage = responseString.substring(firstSpaceIndex + 1);
-      } else {
-         playerBet = Integer.parseInt(responseString);
-      }
-      System.out.println("bet: " + playerBet);
-      System.out.println("msg: " + playerChatMessage);
    }
 
 }

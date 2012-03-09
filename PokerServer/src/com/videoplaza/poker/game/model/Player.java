@@ -4,25 +4,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.videoplaza.poker.server.bot.Bot;
+import com.videoplaza.poker.server.bot.MockBot;
+import com.videoplaza.poker.server.bot.NetworkBot;
+
 public class Player {
 
-   public enum Move {
-      SMALL_BLIND, BIG_BLIND, CHECK, CALL, RAISE, FOLD, ALL_IN, WAITING, RAISE_ALL_IN, OUT, BET;
-      @Override
-      public String toString() {
-         return name().toLowerCase().replace('_', ' ');
-      }
-   }
-
    private String botUrl;
+
    private int position;
    private String name;
    private String author;
-
    private String pictureUrl;
+
    private int stackSize;
    private int currentBet;
-
    private int lastBet;
 
    private boolean isIn;
@@ -57,9 +53,7 @@ public class Player {
    }
 
    public boolean canContinue() {
-      Move[] moves = new Move[] {
-            Move.BIG_BLIND, Move.CALL, Move.CHECK, Move.RAISE, Move.SMALL_BLIND, Move.WAITING, Move.BET
-      };
+      Move[] moves = new Move[] { Move.BIG_BLIND, Move.CALL, Move.CHECK, Move.RAISE, Move.SMALL_BLIND, Move.WAITING, Move.BET };
       return Arrays.asList(moves).contains(lastMove);
    }
 
@@ -70,6 +64,12 @@ public class Player {
 
    public String getAuthor() {
       return author;
+   }
+
+   public Bot getBot() {
+      if (isMockBot())
+         return new MockBot(this);
+      return new NetworkBot(this);
    }
 
    public String getBotUrl() {
@@ -129,9 +129,7 @@ public class Player {
    }
 
    public boolean isInPot() {
-      Move[] moves = new Move[] {
-            Move.BIG_BLIND, Move.CALL, Move.CHECK, Move.RAISE, Move.SMALL_BLIND, Move.WAITING, Move.BET, Move.ALL_IN, Move.RAISE_ALL_IN
-      };
+      Move[] moves = new Move[] { Move.BIG_BLIND, Move.CALL, Move.CHECK, Move.RAISE, Move.SMALL_BLIND, Move.WAITING, Move.BET, Move.ALL_IN, Move.RAISE_ALL_IN };
       return Arrays.asList(moves).contains(lastMove);
    }
 
@@ -197,6 +195,14 @@ public class Player {
          return name + "($" + stackSize + ", " + holeCards.get(0) + " " + holeCards.get(1) + ")";
       }
       return name + "($" + stackSize + ", no cards)";
+   }
+
+   public enum Move {
+      SMALL_BLIND, BIG_BLIND, CHECK, CALL, RAISE, FOLD, ALL_IN, WAITING, RAISE_ALL_IN, OUT, BET;
+      @Override
+      public String toString() {
+         return name().toLowerCase().replace('_', ' ');
+      }
    }
 
 }
