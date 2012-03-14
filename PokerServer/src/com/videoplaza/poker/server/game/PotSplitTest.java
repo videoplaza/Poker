@@ -22,18 +22,18 @@ public class PotSplitTest {
          player.setBot(new AllInBot());
       }
       int multiplier = 0;
-      for (Player player : pokerGame.game.getPlayers()) {
+      for (Player player : pokerGame.getGame().getPlayers()) {
          player.setStackSize(player.getStackSize() * multiplier++);
       }
-      pokerGame.game.setStartStack(4500);
+      pokerGame.getGame().setStartStack(4500);
    }
 
    @Test
    public void testChipIntegrity() throws IOException {
       while (true) {
          loadAndPrepare();
-         while (pokerGame.game.getState() == Game.State.PLAYING) {
-            pokerGame.game.saveToFile("splitState.json");
+         while (pokerGame.getGame().getState() == Game.State.PLAYING) {
+            pokerGame.getGame().saveToFile("splitState.json");
             long seed = RANDOM.nextLong();
             RANDOM.setSeed(seed);
             System.out.println("Current seed " + seed);

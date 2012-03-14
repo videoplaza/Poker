@@ -23,17 +23,17 @@ public class PokerGameTest {
          player.setBot(new MockBot());
       }
       int multiplier = 10000;
-      for (Player player : pokerGame.game.getPlayers()) {
+      for (Player player : pokerGame.getGame().getPlayers()) {
          player.setStackSize(player.getStackSize() * multiplier);
       }
-      pokerGame.game.setStartStack(pokerGame.game.getStartStack() * multiplier);
+      pokerGame.getGame().setStartStack(pokerGame.getGame().getStartStack() * multiplier);
    }
 
    @Test
    public void testChipIntegrity() throws IOException {
       boolean integrity = pokerGame.checkChipIntegrity();
       assert (integrity);
-      pokerGame.game.getPlayers().get(0).setStackSize(0);
+      pokerGame.getGame().getPlayers().get(0).setStackSize(0);
       integrity = pokerGame.checkChipIntegrity();
       assert (!integrity);
    }
@@ -49,8 +49,8 @@ public class PokerGameTest {
    public void testUntilFail() throws IOException {
       while (true) {
          loadAndPrepare();
-         while (pokerGame.game.getState() == Game.State.PLAYING) {
-            pokerGame.game.saveToFile("failState.json");
+         while (pokerGame.getGame().getState() == Game.State.PLAYING) {
+            pokerGame.getGame().saveToFile("failState.json");
             long seed = RANDOM.nextLong();
             RANDOM.setSeed(seed);
             System.out.println("Current seed " + seed);

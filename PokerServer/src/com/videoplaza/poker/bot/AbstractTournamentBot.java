@@ -29,9 +29,6 @@ public abstract class AbstractTournamentBot implements com.videoplaza.poker.serv
     */
    protected Bet call(Game game, Player player, String message) throws IllegalBetException {
       int bet = toCall(game, player);
-      if (bet > player.getStackSize()) {
-         throw new IllegalBetException("Cannot affor bet " + bet + " (stack size is " + player.getStackSize() + ")");
-      }
       return new Bet(bet, message);
    }
 
@@ -71,9 +68,6 @@ public abstract class AbstractTournamentBot implements com.videoplaza.poker.serv
     */
    protected Bet raise(Game game, Player player, int chipsToRaise, String message) throws IllegalBetException {
       int bet = toCall(game, player) + chipsToRaise;
-      if (bet > player.getStackSize()) {
-         throw new IllegalBetException("Cannot affor bet " + bet + " (stack size is " + player.getStackSize() + ")");
-      }
       if (bet < game.getMinimumRaise()) {
          throw new IllegalBetException("Raise is too small (minimum raise is " + game.getMinimumRaise() + ")");
       }

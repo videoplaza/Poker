@@ -18,7 +18,7 @@ import com.videoplaza.poker.server.bot.BotResponse;
 
 public class PokerGame implements Runnable {
 
-   protected Game game;
+   private Game game;
    private PokerDisplay display;
    private Random random;
 
@@ -30,20 +30,35 @@ public class PokerGame implements Runnable {
       game.setStartStack(startStack);
    }
 
+   public boolean checkChipIntegrity() {
+      int totalChips = 0;
+      for (Player player : getGame().getPlayers()) {
+         totalChips += player.getStackSize();
+      }
+      if (totalChips != (getGame().getStartStack() * getGame().getPlayers().size())) {
+         System.out.println("Lost chip integrity! total is " + totalChips);
+         assert false;
+         return false;
+      } else {
+         System.out.println("Chip integrity!");
+      }
+      return true;
+   }
+
    public void doRound() {
       // initialize board for new round
-      game.setCards(new ArrayList<Card>());
-      game.setHighestBet(0);
-      game.setMinimumRaise(game.getBigBlind());
-      game.setPotSize(0);
-      game.setTimeToBet(true);
-      game.setDealer(resolveDealer());
-      int currentPlayerIndex = resolveActivePlayer(game.getDealer(), 3);
+      getGame().setCards(new ArrayList<Card>());
+      getGame().setHighestBet(0);
+      getGame().setMinimumRaise(getGame().getBigBlind());
+      getGame().setPotSize(0);
+      getGame().setTimeToBet(true);
+      getGame().setDealer(resolveDealer());
+      int currentPlayerIndex = resolveActivePlayer(getGame().getDealer(), 3);
       Deck deck = new Deck();
       deck.shuffle(random);
 
-      getDisplay().displayEvent(game, "Dealing hole cards");
-      for (Player player : game.getPlayers()) {
+      getDisplay().displayEvent(getGame(), "Dealing hole cards");
+      for (Player player : getGame().getPlayers()) {
          player.setCurrentBet(0);
          player.setMessage("");
          if (player.getStackSize() <= 0) {
@@ -65,49 +80,53 @@ public class PokerGame implements Runnable {
 
       // flop
       for (int i = 0; i < 3; i++) {
-         game.getCards().add(deck.deal());
+         getGame().getCards().add(deck.deal());
       }
-      getDisplay().displayEvent(game, "Dealing flop");
-      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+      getDisplay().displayEvent(getGame(), "Dealing flop");
+      if (doBettingRound((getGame().getDealer() + 1) % getGame().getPlayers().size(), ++round))
          return;
 
       // toss a card
       deck.deal();
 
       // turn
-      game.getCards().add(deck.deal());
-      getDisplay().displayEvent(game, "Dealing turn");
-      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+      getGame().getCards().add(deck.deal());
+      getDisplay().displayEvent(getGame(), "Dealing turn");
+      if (doBettingRound((getGame().getDealer() + 1) % getGame().getPlayers().size(), ++round))
          return;
 
       // toss a card
       deck.deal();
 
       // river
-      game.getCards().add(deck.deal());
-      getDisplay().displayEvent(game, "Dealing river");
-      if (doBettingRound((game.getDealer() + 1) % game.getPlayers().size(), ++round))
+      getGame().getCards().add(deck.deal());
+      getDisplay().displayEvent(getGame(), "Dealing river");
+      if (doBettingRound((getGame().getDealer() + 1) % getGame().getPlayers().size(), ++round))
          return;
 
-      game.setTimeToBet(false);
+      getGame().setTimeToBet(false);
 
       distributePot();
    }
 
+   public Game getGame() {
+      return game;
+   }
+
    public void run() {
-      getDisplay().displayEvent(game, "Starting new tournament. Blinds are " + game.getSmallBlind() + " / " + game.getBigBlind() + ".");
+      getDisplay().displayEvent(getGame(), "Starting new tournament. Blinds are " + getGame().getSmallBlind() + " / " + getGame().getBigBlind() + ".");
       int deal = 0;
-      while (game.getState() == Game.State.PLAYING) {
+      while (getGame().getState() == Game.State.PLAYING) {
          if (deal == 0)
-            game.saveToFile(game.getId() + "_start.json");
+            getGame().saveToFile(getGame().getId() + "_start.json");
          else
-            game.saveToFile(game.getId() + "_" + deal + ".json");
+            getGame().saveToFile(getGame().getId() + "_" + deal + ".json");
          checkChipIntegrity();
-         getDisplay().displayEvent(game, "Starting tournament deal " + ++deal);
+         getDisplay().displayEvent(getGame(), "Starting tournament deal " + ++deal);
          doRound();
          checkChipIntegrity();
          try {
-            Thread.sleep(game.getEndPauseLength());
+            Thread.sleep(getGame().getEndPauseLength());
          } catch (InterruptedException e) {
             e.printStackTrace();
          }
@@ -119,26 +138,26 @@ public class PokerGame implements Runnable {
       this.display = display;
    }
 
-   protected boolean checkChipIntegrity() {
-      int totalChips = 0;
-      for (Player player : game.getPlayers()) {
-         totalChips += player.getStackSize();
+   public void updateGameState() {
+      Player winner = null;
+      for (Player player : getGame().getPlayers()) {
+         if (player.getStackSize() > 0) {
+            if (winner == null) {
+               winner = player;
+            } else {
+               return;
+            }
+         }
       }
-      if (totalChips != (game.getStartStack() * game.getPlayers().size())) {
-         System.out.println("Lost chip integrity! total is " + totalChips);
-         assert false;
-         return false;
-      } else {
-         System.out.println("Chip integrity!");
-      }
-      return true;
+      getDisplay().displayEvent(getGame(), "Tournament ended, winner was " + winner.getName());
+      getGame().setState(State.FINISHED);
    }
 
    protected void distributePot() {
       //saveGameState("chip_fail.json");
-      int remainingPot = game.getPotSize();
+      int remainingPot = getGame().getPotSize();
       List<Player> remainingPlayersInPot = new ArrayList<Player>();
-      for (Player player : game.getPlayers()) {
+      for (Player player : getGame().getPlayers()) {
          if (player.isInPot()) {
             remainingPlayersInPot.add(player);
          }
@@ -159,36 +178,36 @@ public class PokerGame implements Runnable {
 
          // calculate size of side pot         
          int sidePot = 0;
-         for (Player player : game.getPlayers()) {
+         for (Player player : getGame().getPlayers()) {
             sidePot += Math.min(player.getCurrentBet(), minBet);
             player.setCurrentBet(Math.max(0, player.getCurrentBet() - minBet));
          }
          System.out.println("Sidepot: " + sidePot);
          // get winners and split side pot amongst them
-         List<Player> winners = PokerUtil.getWinningPlayers(remainingPlayersInPot, game.getCards());
+         List<Player> winners = PokerUtil.getWinningPlayers(remainingPlayersInPot, getGame().getCards());
          int winning = sidePot / winners.size();
          int remains = sidePot - (winning * winners.size());
 
-         int[] winPerPlayer = new int[game.getPlayers().size()];
+         int[] winPerPlayer = new int[getGame().getPlayers().size()];
          for (Player winner : winners) {
             winPerPlayer[winner.getPosition()] += winning;
          }
          // distribute remains
-         int worstPosition = game.getDealer() + 1 % game.getPlayers().size();
+         int worstPosition = getGame().getDealer() + 1 % getGame().getPlayers().size();
          while (remains > 0) {
-            Player player = game.getPlayers().get(worstPosition);
+            Player player = getGame().getPlayers().get(worstPosition);
             if (winners.contains(player)) {
                winPerPlayer[worstPosition]++;
                remains--;
             }
             worstPosition++;
-            worstPosition %= game.getPlayers().size();
+            worstPosition %= getGame().getPlayers().size();
          }
 
-         for (int i = 0; i < game.getPlayers().size(); i++) {
+         for (int i = 0; i < getGame().getPlayers().size(); i++) {
             if (winPerPlayer[i] > 0) {
-               Player winner = game.getPlayers().get(i);
-               getDisplay().displayEvent(game, winner.getName() + " won " + winPerPlayer[i] + " chips.");
+               Player winner = getGame().getPlayers().get(i);
+               getDisplay().displayEvent(getGame(), winner.getName() + " won " + winPerPlayer[i] + " chips.");
                winner.increaseStackSize(winPerPlayer[i]);
             }
 
@@ -206,36 +225,21 @@ public class PokerGame implements Runnable {
       }
    }
 
-   protected void updateGameState() {
-      Player winner = null;
-      for (Player player : game.getPlayers()) {
-         if (player.getStackSize() > 0) {
-            if (winner == null) {
-               winner = player;
-            } else {
-               return;
-            }
-         }
-      }
-      getDisplay().displayEvent(game, "Tournament ended, winner was " + winner.getName());
-      game.setState(State.FINISHED);
-   }
-
    private void applyBet(Player player, int bet) {
       player.increaseCurrentBet(bet);
       player.decreaseStackSize(bet);
       player.setLastBet(bet);
-      game.setHighestBet(Math.max(game.getHighestBet(), player.getCurrentBet()));
-      game.increasePotSize(bet);
-      int raiseAmount = player.getCurrentBet() - game.getHighestBet();
+      getGame().setHighestBet(Math.max(getGame().getHighestBet(), player.getCurrentBet()));
+      getGame().increasePotSize(bet);
+      int raiseAmount = player.getCurrentBet() - getGame().getHighestBet();
       if (raiseAmount > 0) {
-         game.setMinimumRaise(bet);
+         getGame().setMinimumRaise(bet);
       }
    }
 
    private boolean checkIfFinished() {
       Player winner = null;
-      for (Player player : game.getPlayers()) {
+      for (Player player : getGame().getPlayers()) {
          if (player.isIn()) {
             if (winner == null) {
                winner = player;
@@ -244,16 +248,16 @@ public class PokerGame implements Runnable {
             }
          }
       }
-      winner.increaseStackSize(game.getPotSize());
-      for (Player player : game.getPlayers()) {
+      winner.increaseStackSize(getGame().getPotSize());
+      for (Player player : getGame().getPlayers()) {
          player.setCurrentBet(0);
       }
-      getDisplay().displayEvent(game, winner.getName() + " won " + game.getPotSize() + " chips.");
+      getDisplay().displayEvent(getGame(), winner.getName() + " won " + getGame().getPotSize() + " chips.");
       return true;
    }
 
    private boolean checkRoundActive(Player nextPlayer) {
-      if (nextPlayer.getCurrentBet() != game.getHighestBet()) {
+      if (nextPlayer.getCurrentBet() != getGame().getHighestBet()) {
          return true;
       }
 
@@ -261,7 +265,7 @@ public class PokerGame implements Runnable {
          return false;
       }
 
-      for (Player player : game.getPlayers()) {
+      for (Player player : getGame().getPlayers()) {
          if (player != nextPlayer) {
             Move lastMove = player.getLastMove();
             if (lastMove == Move.CALL || lastMove == Move.BET || lastMove == Move.CHECK || lastMove == Move.RAISE || lastMove == Move.WAITING
@@ -277,7 +281,7 @@ public class PokerGame implements Runnable {
    private boolean doBettingRound(int currentPlayerIndex, int round) {
       if (round > 1) {
          // reset player states
-         for (Player player : game.getPlayers()) {
+         for (Player player : getGame().getPlayers()) {
             //player.setCurrentBet(0);
             if (player.getLastMove() == Move.RAISE_ALL_IN) {
                player.setLastMove(Move.ALL_IN);
@@ -294,20 +298,20 @@ public class PokerGame implements Runnable {
                player.setLastMove(Move.WAITING);
             }
          }
-         game.setMinimumRaise(game.getBigBlind());
+         getGame().setMinimumRaise(getGame().getBigBlind());
       }
 
       // do round
       Player previousPlayer = null;
-      Player currentPlayer = game.getPlayers().get(currentPlayerIndex);
+      Player currentPlayer = getGame().getPlayers().get(currentPlayerIndex);
       while (checkRoundActive(currentPlayer)) {
-         game.setNextPlayer(currentPlayerIndex);
+         getGame().setNextPlayer(currentPlayerIndex);
          if (currentPlayer.canContinue()) {
             doPlayerBet(currentPlayer);
             previousPlayer = currentPlayer;
-            game.setPreviousPlayer(currentPlayerIndex);
+            getGame().setPreviousPlayer(currentPlayerIndex);
             if (previousPlayer != null && previousPlayer.getLastMove() != Move.OUT) {
-               getDisplay().displayPlayerMove(game, previousPlayer, currentPlayer);
+               getDisplay().displayPlayerMove(getGame(), previousPlayer, currentPlayer);
             }
          } else {
             // check if player state needs update
@@ -317,8 +321,8 @@ public class PokerGame implements Runnable {
             }
          }
          currentPlayerIndex = resolveActivePlayer(currentPlayerIndex, 1);
-         game.setNextPlayer(currentPlayerIndex);
-         currentPlayer = game.getPlayers().get(currentPlayerIndex);
+         getGame().setNextPlayer(currentPlayerIndex);
+         currentPlayer = getGame().getPlayers().get(currentPlayerIndex);
       }
       return checkIfFinished();
    }
@@ -339,7 +343,7 @@ public class PokerGame implements Runnable {
       wantedBet = Math.min(player.getStackSize(), wantedBet);
       wantedBet = Math.max(0, wantedBet);
 
-      int neededToCall = game.getHighestBet() - player.getCurrentBet();
+      int neededToCall = getGame().getHighestBet() - player.getCurrentBet();
 
       if (wantedBet > 0 && wantedBet == player.getStackSize()) {
          // all-in bet
@@ -368,7 +372,7 @@ public class PokerGame implements Runnable {
 
          // raise
          int raise = wantedBet - neededToCall;
-         if (raise < game.getMinimumRaise()) {
+         if (raise < getGame().getMinimumRaise()) {
             player.setLastMove(neededToCall == 0 ? Move.CHECK : Player.Move.CALL);
             return neededToCall;
          }
@@ -382,7 +386,7 @@ public class PokerGame implements Runnable {
    }
 
    private int getBet(Player player) {
-      BotResponse response = player.getBot().askForMove(game, player);
+      BotResponse response = player.getBot().askForMove(getGame(), player);
       String playerChatMessage = response.message;
       if (playerChatMessage != null && playerChatMessage.length() > 0) {
          player.setMessage(playerChatMessage);
@@ -397,18 +401,18 @@ public class PokerGame implements Runnable {
    }
 
    private Player getNextActivePlayer(int index) {
-      int nextActiveIndex = index % game.getPlayers().size();
-      Player nextActive = game.getPlayers().get(nextActiveIndex);
+      int nextActiveIndex = index % getGame().getPlayers().size();
+      Player nextActive = getGame().getPlayers().get(nextActiveIndex);
       while (!nextActive.isIn()) {
-         nextActiveIndex = ++index % game.getPlayers().size();
-         nextActive = game.getPlayers().get(nextActiveIndex);
+         nextActiveIndex = ++index % getGame().getPlayers().size();
+         nextActive = getGame().getPlayers().get(nextActiveIndex);
       }
       return nextActive;
    }
 
    private void postBlinds() {
-      Player smallBlind = getNextActivePlayer(game.getDealer() + 1);
-      int smallBlindAmount = game.getSmallBlind();
+      Player smallBlind = getNextActivePlayer(getGame().getDealer() + 1);
+      int smallBlindAmount = getGame().getSmallBlind();
       if (smallBlindAmount > smallBlind.getStackSize()) {
          smallBlindAmount = smallBlind.getStackSize();
          smallBlind.setLastMove(Move.RAISE_ALL_IN);
@@ -417,12 +421,12 @@ public class PokerGame implements Runnable {
       }
       smallBlind.decreaseStackSize(smallBlindAmount);
       smallBlind.setLastBet(smallBlindAmount);
-      game.increasePotSize(smallBlindAmount);
+      getGame().increasePotSize(smallBlindAmount);
       smallBlind.setCurrentBet(smallBlindAmount);
-      getDisplay().displayEvent(game, smallBlind.getName() + " posts small blind " + smallBlindAmount);
+      getDisplay().displayEvent(getGame(), smallBlind.getName() + " posts small blind " + smallBlindAmount);
       //Lobby.getInstance().displayPlayerMove(game, smallBlind, null);
       Player bigBlind = getNextActivePlayer(smallBlind.getPosition() + 1);
-      int bigBlindAmount = game.getBigBlind();
+      int bigBlindAmount = getGame().getBigBlind();
       if (bigBlindAmount > bigBlind.getStackSize()) {
          bigBlindAmount = bigBlind.getStackSize();
          if (bigBlindAmount > smallBlindAmount) {
@@ -435,27 +439,27 @@ public class PokerGame implements Runnable {
       }
       bigBlind.decreaseStackSize(bigBlindAmount);
       bigBlind.setCurrentBet(bigBlindAmount);
-      game.increasePotSize(bigBlindAmount);
-      game.setHighestBet(Math.max(smallBlindAmount, bigBlindAmount));
-      getDisplay().displayEvent(game, bigBlind.getName() + " posts big blind " + bigBlindAmount);
+      getGame().increasePotSize(bigBlindAmount);
+      getGame().setHighestBet(Math.max(smallBlindAmount, bigBlindAmount));
+      getDisplay().displayEvent(getGame(), bigBlind.getName() + " posts big blind " + bigBlindAmount);
       //Lobby.getInstance().displayPlayerMove(game, bigBlind, null);
    }
 
    private int resolveActivePlayer(int startIndex, int offset) {
       int resultIndex = startIndex;
       for (int i = 0; i < offset; i++) {
-         resultIndex = (resultIndex + 1) % game.getPlayers().size();
-         Player candidate = game.getPlayers().get(resultIndex);
+         resultIndex = (resultIndex + 1) % getGame().getPlayers().size();
+         Player candidate = getGame().getPlayers().get(resultIndex);
          while (candidate.getStackSize() == 0 && !candidate.isAllIn()) {
-            resultIndex = (resultIndex + 1) % game.getPlayers().size();
-            candidate = game.getPlayers().get(resultIndex);
+            resultIndex = (resultIndex + 1) % getGame().getPlayers().size();
+            candidate = getGame().getPlayers().get(resultIndex);
          }
       }
       return resultIndex;
    }
 
    private int resolveDealer() {
-      return resolveActivePlayer(game.getDealer(), 1);
+      return resolveActivePlayer(getGame().getDealer(), 1);
    }
 
 }
