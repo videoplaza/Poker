@@ -1,13 +1,3 @@
 #default bot
 http://localhost:8100/bot/
 http://localhost:8101/bot/
-http://localhost:8102/bot/
-http://localhost:8103/bot/
-http://localhost:8104/bot/
-http://localhost:8105/bot/
-http://localhost:8106/bot/
-http://localhost:8107/bot/
-http://localhost:8108/bot/
-http://localhost:8109/bot/
-http://localhost:8110/bot/
-
