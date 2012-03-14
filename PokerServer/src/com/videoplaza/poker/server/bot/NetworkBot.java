@@ -32,13 +32,13 @@ public class NetworkBot implements Bot {
          HttpURLConnection connection = (HttpURLConnection) botUrl.openConnection();
          connection.setRequestMethod("POST");
          connection.setDoOutput(true);
+         connection.setConnectTimeout(5000);
+         connection.setReadTimeout(5000);
 
          // send state to bot
          OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
          writer.write(data);
          writer.flush();
-         connection.setConnectTimeout(5000);
-         connection.setReadTimeout(5000);
 
          // read bots response
          BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
