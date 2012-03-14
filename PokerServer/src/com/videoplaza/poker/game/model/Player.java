@@ -71,8 +71,8 @@ public class Player {
       if (bot != null) {
          return bot;
       } else if (isMockBot)
-         return new MockBot(this);
-      return new NetworkBot(this);
+         return new MockBot();
+      return new NetworkBot();
    }
 
    public String getBotUrl() {

@@ -12,14 +12,9 @@ import com.videoplaza.poker.game.model.Player;
 import com.videoplaza.poker.server.util.GameMessageUtil;
 
 public class NetworkBot implements Bot {
-   final Player player;
-
-   public NetworkBot(Player player) {
-      this.player = player;
-   }
 
    @Override
-   public BotResponse askForMove(Game game) {
+   public BotResponse askForMove(Game game, Player player) {
       int playerBet = 0;
       String playerChatMessage = null;
       long startTimer = System.currentTimeMillis();
@@ -39,6 +34,8 @@ public class NetworkBot implements Bot {
          OutputStreamWriter writer = new OutputStreamWriter(connection.getOutputStream());
          writer.write(data);
          writer.flush();
+
+         connection.getResponseCode();
 
          // read bots response
          BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));

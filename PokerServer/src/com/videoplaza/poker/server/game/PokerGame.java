@@ -382,7 +382,7 @@ public class PokerGame implements Runnable {
    }
 
    private int getBet(Player player) {
-      BotResponse response = player.getBot().askForMove(game);
+      BotResponse response = player.getBot().askForMove(game, player);
       String playerChatMessage = response.message;
       if (playerChatMessage != null && playerChatMessage.length() > 0) {
          player.setMessage(playerChatMessage);

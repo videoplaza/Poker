@@ -211,7 +211,7 @@ public class Lobby implements PokerDisplay {
       player.setPictureUrl(pictureUrl);
       player.setBotUrl(botUrl);
       if (isMockBot)
-         player.setBot(new MockBot(player));
+         player.setBot(new MockBot());
 
       if (getGames() == null) {
          games = new ArrayList<Game>();

@@ -4,7 +4,7 @@ public class BotResponse {
    public String message;
    public int amount;
 
-   BotResponse(String message, int amount) {
+   public BotResponse(String message, int amount) {
       this.message = message;
       this.amount = amount;
    }

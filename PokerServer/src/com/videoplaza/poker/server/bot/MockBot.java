@@ -5,14 +5,8 @@ import com.videoplaza.poker.game.model.Player;
 
 public class MockBot implements Bot {
 
-   final Player player;
-
-   public MockBot(Player player) {
-      this.player = player;
-   }
-
    @Override
-   public BotResponse askForMove(Game game) {
+   public BotResponse askForMove(Game game, Player player) {
       return new BotResponse("", getMockMove(game, player));
    }
 
