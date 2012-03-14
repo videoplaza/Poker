@@ -4,10 +4,11 @@ import java.util.Random;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.videoplaza.poker.game.model.Card;
 import com.videoplaza.poker.game.model.Game;
 import com.videoplaza.poker.game.model.Player;
 
-public class ExampleBotImpl implements Bot {
+public class ExampleBotImpl extends AbstractTournamentBot {
 
    private static final Random rnd = new Random(System.currentTimeMillis());
 
@@ -18,30 +19,42 @@ public class ExampleBotImpl implements Bot {
 
    @Override
    public String getCreator() {
-      return "ExampleBot";
+      return "Example";
    }
 
    @Override
    public String getName(HttpServletRequest req) {
-      return "Example " + rnd.nextInt(100);
+      return "Example";
    }
 
    @Override
    public Bet play(Game game, Player me, HttpServletRequest req) {
-      if (rnd.nextInt(100) < 25) {
-         return new Bet(0, "");
+      try {
+         if (game.getCards().size() == 0) {
+            return preFlop(game, me);
+         }
+         float handrank = getHandRank(game, me);
+         System.out.println("Handrank " + handrank);
+         if (handrank > 0.5f) {
+            return raise(game, me, game.getHighestBet() * 2, "Good postflop handrank");
+         }
+         return checkOrfold("Bad postflop handrank");
+      } catch (Exception e) {
+         e.printStackTrace();
+         return new Bet(0, "Exception");
       }
-      if (rnd.nextInt(100) > 98) {
-         return new Bet(me.getStackSize(), "All in");
-      }
-      if (rnd.nextInt(100) > 50) {
-         return new Bet(me.getStackSize(), "All in");
-      }
-      return new Bet(rnd.nextInt(toCall(game, me) + game.getMinimumRaise()), "Like a boss");
    }
 
-   private int toCall(Game game, Player myself) {
-      return game.getHighestBet() - myself.getCurrentBet();
+   private Bet preFlop(Game game, Player me) throws Exception {
+      Card[] cards = getMyCards(me);
+      if (cards[0].getRank() == cards[1].getRank()) {
+         return allIn(me, "Pocket pairs");
+      }
+      float handrank = (cards[0].getRank() + cards[1].getRank()) / 28f;
+      System.out.println("Preflop handrank " + handrank);
+      if (handrank > 0.2f) {
+         return call(game, me, "Good preflop hand");
+      }
+      return checkOrfold("Bad preflop hand");
    }
-
 }
