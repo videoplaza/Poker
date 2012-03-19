@@ -38,7 +38,7 @@ public class YourBot extends AbstractTournamentBot {
          if (handrank > 0.5f) {
             return raise(game, me, game.getHighestBet() * 2, "Good postflop handrank");
          }
-         return checkOrfold("Bad postflop handrank");
+         return checkOrFold("Bad postflop handrank");
       } catch (Exception e) {
          e.printStackTrace();
          return new Bet(0, "Exception");
@@ -55,6 +55,6 @@ public class YourBot extends AbstractTournamentBot {
       if (handrank > 0.2f) {
          return call(game, me, "Good preflop hand");
       }
-      return checkOrfold("Bad preflop hand");
+      return checkOrFold("Bad preflop hand");
    }
 }
