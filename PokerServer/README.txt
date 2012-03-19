@@ -1,6 +1,7 @@
 Rules
 --------------------------------
-http://www.texas-holdem.se/spelregler.htm
+(Swedish) http://www.texas-holdem.se/spelregler.htm
+(English) http://www.pokerlistings.com/poker-rules-texas-holdem
 
 
 Java
