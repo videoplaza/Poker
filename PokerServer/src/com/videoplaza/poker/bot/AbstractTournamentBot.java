@@ -35,7 +35,7 @@ public abstract class AbstractTournamentBot implements com.videoplaza.poker.serv
    /*
     * Fold if current best is not 0, in that case check 
     */
-   protected Bet checkOrfold(String message) throws IllegalBetException {
+   protected Bet checkOrFold(String message) throws IllegalBetException {
       return new Bet(0, message);
    }
 
@@ -77,7 +77,7 @@ public abstract class AbstractTournamentBot implements com.videoplaza.poker.serv
    /*
     * Calculate the amount of chips I need to call
     */
-   private int toCall(Game game, Player myself) {
+   protected int toCall(Game game, Player myself) {
       return game.getHighestBet() - myself.getCurrentBet();
    }
 
