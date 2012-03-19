@@ -273,7 +273,7 @@ public class Lobby implements PokerDisplay {
 
    public void setBlinds(String tableId, int smallBlind) {
       for (Game game : games) {
-         if (game.getId().equals(tableId)) {
+         if (game.getId().equals(tableId) || tableId == null || tableId.isEmpty()) {
             // found game, set blinds
             int bigBlind = smallBlind * 2;
             System.out.println("Setting blinds for table " + tableId + " to " + smallBlind + "/" + bigBlind);
