@@ -193,7 +193,7 @@ public class PokerGame implements Runnable {
             winPerPlayer[winner.getPosition()] += winning;
          }
          // distribute remains
-         int worstPosition = getGame().getDealer() + 1 % getGame().getPlayers().size();
+         int worstPosition = (getGame().getDealer() + 1) % getGame().getPlayers().size();
          while (remains > 0) {
             Player player = getGame().getPlayers().get(worstPosition);
             if (winners.contains(player)) {
