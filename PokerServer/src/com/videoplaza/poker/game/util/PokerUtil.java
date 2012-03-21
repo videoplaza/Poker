@@ -122,7 +122,7 @@ public class PokerUtil {
     * @return index of winning player or -1 in case of a tie
     */
    public static List<Integer> getWinningHand(List<List<Card>> playerHoleCards, List<Card> cardsOnTable) {
-      assert cardsOnTable.size() == 7;
+//      assert cardsOnTable.size() == 7;
       List<Integer> winners = new ArrayList<Integer>();
       int bestHandSoFar = 0;
       for (int player = 0; player < playerHoleCards.size(); player++) {
@@ -141,7 +141,7 @@ public class PokerUtil {
    }
 
    public static List<Player> getWinningPlayers(List<Player> players, List<Card> cardsOnTable) {
-      assert cardsOnTable.size() == 7;
+//      assert cardsOnTable.size() == 7;
       List<Player> winners = new ArrayList<Player>();
       List<Player> activePlayers = new ArrayList<Player>();
       List<List<Card>> playerHoleCards = new ArrayList<List<Card>>();
