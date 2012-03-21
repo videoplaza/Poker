@@ -70,7 +70,7 @@ def check_or_fold_game(message):
 
 
 def all_in_game(me_player, message):
-    return me_player.getStackSize(), message
+    return message, me_player.getStackSize()
 
 
 def pre_flop_game(game, me_player):
