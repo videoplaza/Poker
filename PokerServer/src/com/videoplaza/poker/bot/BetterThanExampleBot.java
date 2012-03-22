@@ -14,17 +14,17 @@ public class BetterThanExampleBot extends AbstractTournamentBot {
 
    @Override
    public String getAvatarImageUrl() {
-      return "http://disturbingauctions.com/thumbnails/froggolf.jpg";
+      return "http://upload.wikimedia.org/wikipedia/en/3/3f/Lionel_Hutz.jpg";
    }
 
    @Override
    public String getCreator() {
-      return "Example";
+      return "A team";
    }
 
    @Override
    public String getName(HttpServletRequest req) {
-      return "Example";
+      return "Mr T";
    }
 
    @Override
@@ -40,11 +40,17 @@ public class BetterThanExampleBot extends AbstractTournamentBot {
         	 int targetPot = maxPotSize / 2;
         	 int toRaise = targetPot - game.getPotSize();
         	 toRaise = Math.max(game.getMinimumRaise(), toRaise);
+        	 System.err.println("XXXXXXXXXXXXX RAISING!");
+        	 
+        	 toRaise = Math.min(toRaise, me.getStackSize());
+        	 
         	 return raise(game, me, toRaise, "");
          }
          
-         if (game.getPotSize() < maxPotSize)
-        	 return call(game, me, "");
+         if (game.getPotSize() < maxPotSize) {
+        	 System.err.println("XXXXXXXXXXXXXXXX Calling!");
+        	 return call(game, me, "What does marcellus wallace look like?");
+         }
          
          return checkOrFold("");
          
@@ -58,40 +64,61 @@ public class BetterThanExampleBot extends AbstractTournamentBot {
       
 	   int maxPotSize = maxPotSize(game, me);
 	   
-	   if (game.getPotSize() > maxPotSize)
-		   return checkOrFold("I got a hang over.");
+	   if (game.getPotSize() > maxPotSize) {
+		   System.err.println("XXXXXXXXXXXXXXXXXXXX CHECK OR FOLD");
+		   return checkOrFold("I got a hang over ooowowooooo.");
+	   }
 	   
 	   Card[] cards = getMyCards(me);
 
 	   int rMax = Math.max(cards[0].getRank(), cards[1].getRank());
 	   int rMin = Math.min(cards[0].getRank(), cards[1].getRank());
-		
-	   
-	   if (cards[0].getRank() == cards[1].getRank()) {
+	
+	   if (cards[0].getRank() == cards[1].getRank())
            return call(game, me, "Hmm.");
-       }
+       
 	   
 	   boolean sameColor = cards[0].getSuit() == cards[1].getSuit();
 	   
 	   if (rMax == 14 && sameColor)
-		   return call(game, me, "");
-	   
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
+		   
 	   if (10 <= rMax && rMax <= 13 && 10 <= rMin && rMin <= 13 && sameColor)
-		   return call(game, me, "");
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
 	   
 	   if (7 <= rMax && rMax <= 11 && 7 <= rMin && rMin <= 11 && sameColor)
-		   return call(game, me, "");
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
 	   
 	   if (6 <= rMax && rMax <= 10 && 6 <= rMin && rMin <= 10 && sameColor)
-		   return call(game, me, "");
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
 	   
 	   if (12 <= rMax && rMax <= 14 && 12 <= rMin && rMin <= 14)
-		   return call(game, me, "");
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
 	   
 	   if (11 <= rMax && rMax <= 13 && 11 <= rMin && rMin <= 13)
-		   return call(game, me, "");
+	   {
+		   System.err.println("XXXXXXXXXXX CALLING");
+		   return call(game, me, "What does marcellus wallace look like?");
+	   }
 	   
-	   return checkOrFold("");
+	   
+	   System.err.println("XXXXXXXXXXXXXXXXX CHECK OR FOLD!");
+	   return checkOrFold("I got a hang over ooowowooooo");
           
    }
    
@@ -102,12 +129,17 @@ public class BetterThanExampleBot extends AbstractTournamentBot {
 	   
 	   double handRank = 0;
 	   
-	   if (game.getCards().isEmpty()) {
+	   if (game.getCards().isEmpty())
 		   handRank = 0.25;
-	   } else
+	   else
 		   handRank = getHandRank(game, me);
 	   
-	   return (int) (handRank * ourBalance / 2);
+	   int result = (int) (handRank * ourBalance / 2);
+	   
+	   result = Math.max(result, 3 * game.getBigBlind());
+	   //System.err.println("XXXXXXXXX maxPotSize: " + result + "  big blind: " + game.getBigBlind());
+	   
+	   return result;
    }
    
    
