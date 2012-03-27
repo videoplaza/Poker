@@ -22,8 +22,13 @@ public class PokerBotTest {
    public void loadAndPrepare() throws IOException {
       Game game = Game.restoreFromFile("test_data_game_start.json");
       pokerGame = new PokerGame(game, 1000, new MockDisplay(), random);
+      AbstractTournamentBot[] bots = new AbstractTournamentBot[] { new ExampleBotImpl(), new ActualBot(), new EriKKoBot(), new EriKKoBot2(), new KwimboBot(),
+            new PolfWackBot(), new BieberBot(), new EvaBot(), new BetterThanExampleBot() };
+      int playerIndex = 0;
       for (Player player : game.getPlayers()) {
-         player.setBot(new ExampleBotImpl());
+         player.setBot(bots[playerIndex]);
+         player.setName(bots[playerIndex].getName(null));
+         playerIndex = (playerIndex + 1) % bots.length;
       }
       YourBot bot = new YourBot();
       game.getPlayers().get(0).setBot(bot);
@@ -39,7 +44,7 @@ public class PokerBotTest {
 
    @Test
    public void testBot() throws IOException {
-      int wins = 0;
+      int[] wins = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
       int maxBB = 0;
       for (int i = 0; i < NB_TOURNAMENTS; i++) {
          loadAndPrepare();
@@ -66,11 +71,20 @@ public class PokerBotTest {
                maxBB = Math.max(maxBB, bigBlind);
             }
          }
-         if (pokerGame.getGame().getPlayers().get(0).getStackSize() > 0) {
-            wins++;
+         int numberOfPlayers = pokerGame.getGame().getPlayers().size();
+         for (int j = 0; j < numberOfPlayers; j++) {
+            if (pokerGame.getGame().getPlayers().get(j).getStackSize() > 0) {
+               wins[j]++;
+            }
          }
       }
-      System.out.println("Bot won " + wins + " out of " + NB_TOURNAMENTS + " tournaments.");
       System.out.println("Max BB was " + maxBB);
+
+      int numberOfPlayers = pokerGame.getGame().getPlayers().size();
+      for (int j = 0; j < numberOfPlayers; j++) {
+         System.out.println(j + ". " + pokerGame.getGame().getPlayers().get(j).getName() + " won " + wins[j] + " tournaments.");
+      }
+      System.out.println("-----------------------------------------------------------------------");
+      System.out.println("Your bot won " + wins[0] + " out of " + NB_TOURNAMENTS + " tournaments.");
    }
 }
