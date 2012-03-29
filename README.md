@@ -15,7 +15,7 @@ Getting started
 
 Competition time!
 -----------------
-To run a tournament, start by editing *table.txt* to include URLs of all the participating bots. Then run *com.videoplaza.poker.server.game.PokerServer* as a Java application. 
+To run a tournament, start by editing *table.txt* to include URLs of all the participating bots (default is http://<ip>:8084/bot/). Then run *com.videoplaza.poker.server.game.PokerServer* as a Java application. 
 
 Hook up a screen that everyone can watch (as well as some speakers if you are on a Mac). Go to http://localhost:8080/files/index.htm
 
